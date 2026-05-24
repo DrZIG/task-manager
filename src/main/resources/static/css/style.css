@@ -1,0 +1,54 @@
+/* ─── Task cards ─────────────────────────────────────────────────── */
+.task-card {
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    border: 1.5px solid #dee2e6;
+}
+
+.task-card:hover {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+}
+
+.task-card.active-task {
+    border-color: #0d6efd;
+    background-color: #f0f6ff;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+}
+
+/* ─── Works table date separator ─────────────────────────────────── */
+.border-top-2 {
+    border-top: 2px solid #dee2e6 !important;
+}
+
+/* ─── Utilities ──────────────────────────────────────────────────── */
+.cursor-pointer { cursor: pointer; }
+
+/* ─── Navbar ─────────────────────────────────────────────────────── */
+.navbar-brand {
+    font-size: 1.1rem;
+    letter-spacing: 0.5px;
+}
+
+/* ─── Cards ──────────────────────────────────────────────────────── */
+.card {
+    border-radius: 8px;
+}
+
+/* ─── Tables ─────────────────────────────────────────────────────── */
+.table th {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+/* ─── Badges ─────────────────────────────────────────────────────── */
+.badge {
+    font-weight: 500;
+}
+
+/* ─── Works panel ────────────────────────────────────────────────── */
+#works-panel {
+    min-height: 300px;
+}
