@@ -1,5 +1,6 @@
 package com.drzig.taskmanager.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import org.hibernate.annotations.CreationTimestamp;
@@ -34,6 +35,7 @@ public class Task {
     @OrderBy("id ASC")
     private List<Note> notes = new ArrayList<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("workDate DESC, startTime ASC")
     private List<Work> works = new ArrayList<>();

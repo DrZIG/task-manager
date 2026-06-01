@@ -1,5 +1,6 @@
 package com.drzig.taskmanager.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 
@@ -30,6 +31,7 @@ public class Work {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_id", nullable = false)
     private Task task;
@@ -88,7 +90,12 @@ public class Work {
     @Transient
     public long getDurationMinutes() {
         if (startTime != null && finishTime != null) {
-            return Duration.between(startTime, finishTime).toMinutes();
+            long minutes = Duration.between(startTime, finishTime).toMinutes();
+            // If finish is before or equal to start, assume overnight — add 24h
+            if (minutes <= 0) {
+                minutes += 24 * 60;
+            }
+            return minutes;
         }
         return 0;
     }

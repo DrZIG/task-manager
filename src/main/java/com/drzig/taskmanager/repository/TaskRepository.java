@@ -12,6 +12,9 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT DISTINCT t FROM Task t LEFT JOIN FETCH t.notes ORDER BY t.createdAt DESC")
     List<Task> findAllWithNotes();
 
-    @Query("SELECT DISTINCT t FROM Task t LEFT JOIN FETCH t.notes LEFT JOIN FETCH t.works WHERE t.id = :id")
-    Optional<Task> findByIdWithDetails(Long id);
+    @Query("SELECT DISTINCT t FROM Task t LEFT JOIN FETCH t.notes WHERE t.id = :id")
+    Optional<Task> findByIdWithNotes(Long id);
+
+    @Query("SELECT DISTINCT t FROM Task t LEFT JOIN FETCH t.works WHERE t.id = :id")
+    Optional<Task> findByIdWithWorks(Long id);
 }

@@ -183,7 +183,6 @@
     let activeTaskId = null;
 
     function loadWorks(taskId) {
-        // Highlight selected task card
         document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active-task'));
         const activeCard = document.getElementById('task-card-' + taskId);
         if (activeCard) activeCard.classList.add('active-task');
@@ -235,21 +234,21 @@
                     const w = ws.work;
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td class="text-nowrap small">${formatDate(w.workDate)}</td>
-                        <td class="text-nowrap small">${formatTime(w.startTime)}</td>
-                        <td class="text-nowrap small">${formatTime(w.finishTime)}</td>
-                        <td class="text-nowrap"><span class="badge bg-primary-subtle text-primary border border-primary-subtle">${w.formattedDuration}</span></td>
-                        <td class="text-nowrap"><span class="badge bg-success-subtle text-success border border-success-subtle">${ws.formattedDailyTotal}</span></td>
-                        <td class="small">${escHtml(w.description || '—')}</td>
-                        <td class="text-nowrap">
-                            <a href="${ctx}works/${w.id}/edit" class="btn btn-outline-secondary btn-sm py-0 px-1" title="Edit"><i class="bi bi-pencil"></i></a>
-                            <form action="${ctx}works/${w.id}/delete" method="post" style="display:inline"
-                                  onsubmit="return confirm('Delete this work entry?')">
-                                <input type="hidden" name="_csrf" value="${getCsrfToken()}">
-                                <button class="btn btn-outline-danger btn-sm py-0 px-1" title="Delete"><i class="bi bi-trash"></i></button>
-                            </form>
-                        </td>
-                    `;
+                    <td class="text-nowrap small">${formatDate(w.workDate)}</td>
+                    <td class="text-nowrap small">${formatTime(w.startTime)}</td>
+                    <td class="text-nowrap small">${formatTime(w.finishTime)}</td>
+                    <td class="text-nowrap"><span class="badge bg-primary-subtle text-primary border border-primary-subtle">${w.formattedDuration}</span></td>
+                    <td class="text-nowrap"><span class="badge bg-success-subtle text-success border border-success-subtle">${ws.formattedDailyTotal}</span></td>
+                    <td class="small">${escHtml(w.description || '—')}</td>
+                    <td class="text-nowrap">
+                        <a href="${ctx}works/${w.id}/edit" class="btn btn-outline-secondary btn-sm py-0 px-1" title="Edit"><i class="bi bi-pencil"></i></a>
+                        <form action="${ctx}works/${w.id}/delete" method="post" style="display:inline"
+                              onsubmit="return confirm('Delete this work entry?')">
+                            <input type="hidden" name="_csrf" value="${getCsrfToken()}">
+                            <button class="btn btn-outline-danger btn-sm py-0 px-1" title="Delete"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </td>
+                `;
                     tbody.appendChild(tr);
                 });
             })
@@ -259,14 +258,18 @@
             });
     }
 
-    function formatDate(arr) {
-        if (!arr) return '';
-        return arr[0] + '-' + String(arr[1]).padStart(2,'0') + '-' + String(arr[2]).padStart(2,'0');
+    // Jackson serializes LocalDate as "2026-05-21" — reformat to "May 21, 2026" for display
+    function formatDate(str) {
+        if (!str) return '';
+        const [year, month, day] = str.split('-').map(Number);
+        const d = new Date(year, month - 1, day);
+        return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     }
 
-    function formatTime(arr) {
-        if (!arr) return '';
-        return String(arr[0]).padStart(2,'0') + ':' + String(arr[1]).padStart(2,'0');
+    // Jackson serializes LocalTime as "08:00:00" — trim to "HH:mm"
+    function formatTime(str) {
+        if (!str) return '';
+        return str.substring(0, 5);
     }
 
     function escHtml(str) {
@@ -278,7 +281,6 @@
         return meta ? meta.getAttribute('content') : '';
     }
 
-    // Auto-load task if returned from save
     const params = new URLSearchParams(window.location.search);
     const preselect = params.get('taskId');
     if (preselect) {

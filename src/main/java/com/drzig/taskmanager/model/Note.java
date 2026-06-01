@@ -1,5 +1,6 @@
 package com.drzig.taskmanager.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 
@@ -15,6 +16,7 @@ public class Note {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_id", nullable = false)
     private Task task;

@@ -19,11 +19,25 @@ public interface WorkRepository extends JpaRepository<Work, Long> {
     @Query("SELECT w FROM Work w JOIN FETCH w.task ORDER BY w.workDate DESC, w.startTime ASC")
     List<Work> findAllWithTask();
 
-    @Query(value = "SELECT SUM(EXTRACT(EPOCH FROM (finish_time - start_time)) / 60) FROM works WHERE work_date = :date",
+    @Query(value = """
+            SELECT SUM(
+                CASE WHEN finish_time > start_time
+                    THEN EXTRACT(EPOCH FROM (finish_time - start_time)) / 60
+                    ELSE EXTRACT(EPOCH FROM (finish_time - start_time)) / 60 + 1440
+                END
+            ) FROM works WHERE work_date = :date
+            """,
             nativeQuery = true)
     Long sumMinutesByDate(@Param("date") LocalDate date);
 
-    @Query(value = "SELECT work_date, SUM(EXTRACT(EPOCH FROM (finish_time - start_time)) / 60) FROM works WHERE work_date IN :dates GROUP BY work_date",
+    @Query(value = """
+            SELECT work_date, SUM(
+                CASE WHEN finish_time > start_time
+                    THEN EXTRACT(EPOCH FROM (finish_time - start_time)) / 60
+                    ELSE EXTRACT(EPOCH FROM (finish_time - start_time)) / 60 + 1440
+                END
+            ) FROM works WHERE work_date IN :dates GROUP BY work_date
+            """,
             nativeQuery = true)
     List<Object[]> sumMinutesByDates(@Param("dates") List<LocalDate> dates);
 }

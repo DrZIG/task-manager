@@ -26,9 +26,8 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         if (!userRepository.existsByUsername("admin")) {
-            User admin = new User("admin", passwordEncoder.encode("FAKE"));
+            User admin = new User("admin", passwordEncoder.encode("admin123"));
             admin.setRole("ROLE_ADMIN");
-//            admin.setMustChangePassword(false);
             userRepository.save(admin);
             logger.info("Default admin user created");
         }

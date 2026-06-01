@@ -25,8 +25,15 @@ public class TaskService {
     }
 
     public Task findById(Long id) {
-        return taskRepository.findByIdWithDetails(id)
+        // Fetch with notes first (this is the entity we'll return)
+        Task task = taskRepository.findByIdWithNotes(id)
                 .orElseThrow(() -> new IllegalArgumentException("Task not found: " + id));
+
+        // Second query fetches works and merges into the same first-level cache entity
+        taskRepository.findByIdWithWorks(id)
+                .ifPresent(t -> task.setWorks(t.getWorks()));
+
+        return task;
     }
 
     @Transactional
