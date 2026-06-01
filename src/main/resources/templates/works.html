@@ -145,7 +145,8 @@
                            class="btn btn-outline-secondary btn-sm py-0 px-1 me-1" title="Edit">
                             <i class="bi bi-pencil"></i>
                         </a>
-                        <form th:action="@{/works/{id}/delete(id=${ws.work.id})}" method="post"
+                        <form th:if="${#authorization.expression('hasRole(''ADMIN'')')}"
+                              th:action="@{/works/{id}/delete(id=${ws.work.id})}" method="post"
                               style="display:inline"
                               onsubmit="return confirm('Delete this work entry?')">
                             <input type="hidden" name="returnTo" value="works">

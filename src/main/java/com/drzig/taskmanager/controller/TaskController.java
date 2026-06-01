@@ -5,6 +5,7 @@ import com.drzig.taskmanager.model.Task;
 import com.drzig.taskmanager.service.TaskService;
 import com.drzig.taskmanager.service.WorkService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -88,6 +89,7 @@ public class TaskController {
 
     // ─── Delete task ──────────────────────────────────────────────────────────
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/tasks/{id}/delete")
     public String deleteTask(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         taskService.delete(id);

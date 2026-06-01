@@ -4,6 +4,7 @@ import com.drzig.taskmanager.model.Work;
 import com.drzig.taskmanager.service.TaskService;
 import com.drzig.taskmanager.service.WorkService;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -59,22 +60,27 @@ public class WorkController {
     public String createWork(
             @ModelAttribute Work work,
             @RequestParam Long taskId,
+            @RequestParam(required = false) Long returnTaskId,
             @RequestParam(required = false) String returnTo,
             RedirectAttributes redirectAttributes) {
         workService.save(work, taskId);
         redirectAttributes.addFlashAttribute("success", "Work logged successfully.");
         if ("works".equals(returnTo)) return "redirect:/works";
-        return "redirect:/?taskId=" + taskId;
+        long redirectTaskId = returnTaskId != null ? returnTaskId : taskId;
+        return "redirect:/?taskId=" + redirectTaskId;
     }
 
     // ─── Edit work ────────────────────────────────────────────────────────────
 
     @GetMapping("/works/{id}/edit")
-    public String editWorkForm(@PathVariable Long id, Model model) {
+    public String editWorkForm(@PathVariable Long id,
+                               @RequestParam(required = false) Long taskId,
+                               Model model) {
         Work work = workService.findById(id);
         model.addAttribute("work", work);
         model.addAttribute("tasks", taskService.findAll());
         model.addAttribute("selectedTaskId", work.getTask().getId());
+        model.addAttribute("returnTaskId", taskId != null ? taskId : work.getTask().getId());
         model.addAttribute("pageTitle", "Edit Work");
         return "work-form";
     }
@@ -84,20 +90,24 @@ public class WorkController {
             @PathVariable Long id,
             @ModelAttribute Work work,
             @RequestParam Long taskId,
+            @RequestParam(required = false) Long returnTaskId,
             @RequestParam(required = false) String returnTo,
             RedirectAttributes redirectAttributes) {
         work.setId(id);
         workService.save(work, taskId);
         redirectAttributes.addFlashAttribute("success", "Work updated.");
         if ("works".equals(returnTo)) return "redirect:/works";
-        return "redirect:/?taskId=" + taskId;
+        long redirectTaskId = returnTaskId != null ? returnTaskId : taskId;
+        return "redirect:/?taskId=" + redirectTaskId;
     }
 
     // ─── Delete work ──────────────────────────────────────────────────────────
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/works/{id}/delete")
     public String deleteWork(
             @PathVariable Long id,
+            @RequestParam(required = false) Long returnTaskId,
             @RequestParam(required = false) String returnTo,
             RedirectAttributes redirectAttributes) {
         Work work = workService.findById(id);
@@ -105,6 +115,7 @@ public class WorkController {
         workService.delete(id);
         redirectAttributes.addFlashAttribute("success", "Work deleted.");
         if ("works".equals(returnTo)) return "redirect:/works";
-        return "redirect:/?taskId=" + taskId;
+        long redirectTaskId = returnTaskId != null ? returnTaskId : taskId;
+        return "redirect:/?taskId=" + redirectTaskId;
     }
 }
