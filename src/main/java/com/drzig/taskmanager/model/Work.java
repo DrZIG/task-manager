@@ -1,6 +1,7 @@
 package com.drzig.taskmanager.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 
@@ -10,6 +11,7 @@ import java.time.Duration;
 
 @Entity
 @Table(name = "works")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Work {
 
     @Id
@@ -35,6 +37,11 @@ public class Work {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_id", nullable = false)
     private Task task;
+
+    /** The user who logged this work entry. Works are only visible to their owner, except for admins. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     public Long getId() {
         return id;
@@ -82,6 +89,14 @@ public class Work {
 
     public void setTask(Task task) {
         this.task = task;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 
     /**

@@ -1,10 +1,13 @@
 package com.drzig.taskmanager.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 
 @Entity
 @Table(name = "users")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class User {
 
     @Id
@@ -16,6 +19,7 @@ public class User {
     private String username;
 
     @NotBlank
+    @JsonIgnore
     @Column(nullable = false)
     private String password;
 

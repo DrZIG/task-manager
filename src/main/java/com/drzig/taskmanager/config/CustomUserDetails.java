@@ -9,6 +9,7 @@ import java.util.List;
 
 public class CustomUserDetails implements UserDetails {
 
+    private final Long id;
     private final String username;
     private final String password;
     private final String role;
@@ -16,6 +17,7 @@ public class CustomUserDetails implements UserDetails {
     private final Collection<SimpleGrantedAuthority> authorities;
 
     public CustomUserDetails(User user) {
+        this.id = user.getId();
         this.username = user.getUsername();
         this.password = user.getPassword();
         this.role = user.getRole();
@@ -23,8 +25,16 @@ public class CustomUserDetails implements UserDetails {
         this.authorities = List.of(new SimpleGrantedAuthority(user.getRole()));
     }
 
+    public Long getId() {
+        return id;
+    }
+
     public String getRole() {
         return role;
+    }
+
+    public boolean isAdmin() {
+        return "ROLE_ADMIN".equals(role);
     }
 
     public boolean isMustChangePassword() {

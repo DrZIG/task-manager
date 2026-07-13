@@ -95,6 +95,7 @@
                 <tr>
                     <th>Date</th>
                     <th>Task</th>
+                    <th th:if="${isAdmin}">User</th>
                     <th>Start</th>
                     <th>Finish</th>
                     <th>Duration</th>
@@ -120,6 +121,10 @@
                         <a th:href="@{/(taskId=${ws.work.task.id})}"
                            class="text-decoration-none fw-semibold small"
                            th:text="${ws.work.task.title}">Task title</a>
+                    </td>
+                    <td th:if="${isAdmin}" class="small">
+                        <i class="bi bi-person-circle me-1 text-muted"></i>
+                        <span th:text="${ws.work.user.username}"></span>
                     </td>
                     <td class="text-nowrap small">
                         <i class="bi bi-play-fill text-success"></i>

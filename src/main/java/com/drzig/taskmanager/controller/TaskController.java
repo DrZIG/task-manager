@@ -1,11 +1,12 @@
 package com.drzig.taskmanager.controller;
 
+import com.drzig.taskmanager.config.CustomUserDetails;
 import com.drzig.taskmanager.dto.WorkSummaryDto;
 import com.drzig.taskmanager.model.Task;
 import com.drzig.taskmanager.service.TaskService;
 import com.drzig.taskmanager.service.WorkService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -37,10 +38,12 @@ public class TaskController {
 
     @GetMapping("/api/tasks/{id}/works")
     @ResponseBody
-    public ResponseEntity<?> getWorksForTask(@PathVariable Long id) {
+    public ResponseEntity<?> getWorksForTask(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
         try {
             Task task = taskService.findById(id);
-            List<WorkSummaryDto> works = workService.findByTaskId(id);
+            List<WorkSummaryDto> works = workService.findByTaskId(id, currentUser.getId(), currentUser.isAdmin());
             return ResponseEntity.ok(new TaskWorksResponse(task, works));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
@@ -89,7 +92,6 @@ public class TaskController {
 
     // ─── Delete task ──────────────────────────────────────────────────────────
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/tasks/{id}/delete")
     public String deleteTask(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         taskService.delete(id);

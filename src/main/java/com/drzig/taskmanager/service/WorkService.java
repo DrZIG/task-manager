@@ -2,9 +2,12 @@ package com.drzig.taskmanager.service;
 
 import com.drzig.taskmanager.dto.WorkSummaryDto;
 import com.drzig.taskmanager.model.Task;
+import com.drzig.taskmanager.model.User;
 import com.drzig.taskmanager.model.Work;
 import com.drzig.taskmanager.repository.TaskRepository;
+import com.drzig.taskmanager.repository.UserRepository;
 import com.drzig.taskmanager.repository.WorkRepository;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,35 +21,50 @@ public class WorkService {
 
     private final WorkRepository workRepository;
     private final TaskRepository taskRepository;
+    private final UserRepository userRepository;
 
-    public WorkService(WorkRepository workRepository, TaskRepository taskRepository) {
+    public WorkService(WorkRepository workRepository, TaskRepository taskRepository, UserRepository userRepository) {
         this.workRepository = workRepository;
         this.taskRepository = taskRepository;
+        this.userRepository = userRepository;
     }
 
-    public List<WorkSummaryDto> findByTaskId(Long taskId) {
-        List<Work> works = workRepository.findByTaskIdOrderByDateAndTime(taskId);
-        return enrichWithDailyTotals(works);
+    public List<WorkSummaryDto> findByTaskId(Long taskId, Long currentUserId, boolean isAdmin) {
+        List<Work> works = isAdmin
+                ? workRepository.findByTaskIdOrderByDateAndTime(taskId)
+                : workRepository.findByTaskIdAndUserOrderByDateAndTime(taskId, currentUserId);
+        return enrichWithDailyTotals(works, currentUserId, isAdmin);
     }
 
-    public List<WorkSummaryDto> findAll() {
-        List<Work> works = workRepository.findAllWithTask();
-        return enrichWithDailyTotals(works);
+    public List<WorkSummaryDto> findAll(Long currentUserId, boolean isAdmin) {
+        List<Work> works = isAdmin
+                ? workRepository.findAllWithTask()
+                : workRepository.findByUserOrderByDateAndTime(currentUserId);
+        return enrichWithDailyTotals(works, currentUserId, isAdmin);
     }
 
-    public List<WorkSummaryDto> findByDateRange(LocalDate from, LocalDate to) {
-        List<Work> works = workRepository.findByDateRange(from, to);
-        return enrichWithDailyTotals(works);
+    public List<WorkSummaryDto> findByDateRange(LocalDate from, LocalDate to, Long currentUserId, boolean isAdmin) {
+        List<Work> works = isAdmin
+                ? workRepository.findByDateRange(from, to)
+                : workRepository.findByDateRangeAndUser(from, to, currentUserId);
+        return enrichWithDailyTotals(works, currentUserId, isAdmin);
     }
 
-    private List<WorkSummaryDto> enrichWithDailyTotals(List<Work> works) {
+    /**
+     * For each work, calculates the total minutes logged on its workDate.
+     * For a regular user this is scoped to their own works only.
+     * For an admin it's the total across all users.
+     */
+    private List<WorkSummaryDto> enrichWithDailyTotals(List<Work> works, Long currentUserId, boolean isAdmin) {
         Set<LocalDate> dates = works.stream()
                 .map(Work::getWorkDate)
                 .collect(Collectors.toSet());
 
         Map<LocalDate, Long> dailyTotals = new HashMap<>();
         if (!dates.isEmpty()) {
-            List<Object[]> rows = workRepository.sumMinutesByDates(new ArrayList<>(dates));
+            List<Object[]> rows = isAdmin
+                    ? workRepository.sumMinutesByDates(new ArrayList<>(dates))
+                    : workRepository.sumMinutesByDatesAndUser(new ArrayList<>(dates), currentUserId);
             for (Object[] row : rows) {
                 // Native query returns java.sql.Date, not LocalDate — convert explicitly
                 LocalDate date = ((Date) row[0]).toLocalDate();
@@ -60,12 +78,13 @@ public class WorkService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
-    public Work save(Work work, Long taskId) {
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new IllegalArgumentException("Task not found: " + taskId));
-        work.setTask(task);
-        return workRepository.save(work);
+    /** Fetches a work entry, enforcing that only the owner or an admin can access it. */
+    public Work findByIdForUser(Long id, Long currentUserId, boolean isAdmin) {
+        Work work = findById(id);
+        if (!isAdmin && !work.getUser().getId().equals(currentUserId)) {
+            throw new AccessDeniedException("You do not have access to this work entry");
+        }
+        return work;
     }
 
     public Work findById(Long id) {
@@ -73,8 +92,43 @@ public class WorkService {
                 .orElseThrow(() -> new IllegalArgumentException("Work not found: " + id));
     }
 
+    // ─── Writes ─────────────────────────────────────────────────────────────
+
     @Transactional
-    public void delete(Long id) {
+    public Work createWork(Work work, Long taskId, Long ownerUserId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new IllegalArgumentException("Task not found: " + taskId));
+        User owner = userRepository.getReferenceById(ownerUserId);
+        work.setTask(task);
+        work.setUser(owner);
+        return workRepository.save(work);
+    }
+
+    @Transactional
+    public Work updateWork(Long id, Work updatedFields, Long taskId, Long currentUserId, boolean isAdmin) {
+        Work existing = findById(id);
+        if (!isAdmin && !existing.getUser().getId().equals(currentUserId)) {
+            throw new AccessDeniedException("You do not have access to this work entry");
+        }
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new IllegalArgumentException("Task not found: " + taskId));
+
+        existing.setTask(task);
+        existing.setWorkDate(updatedFields.getWorkDate());
+        existing.setStartTime(updatedFields.getStartTime());
+        existing.setFinishTime(updatedFields.getFinishTime());
+        existing.setDescription(updatedFields.getDescription());
+        // Owner is intentionally left unchanged.
+
+        return workRepository.save(existing);
+    }
+
+    @Transactional
+    public void delete(Long id, Long currentUserId, boolean isAdmin) {
+        Work work = findById(id);
+        if (!isAdmin && !work.getUser().getId().equals(currentUserId)) {
+            throw new AccessDeniedException("You do not have access to this work entry");
+        }
         workRepository.deleteById(id);
     }
 }
