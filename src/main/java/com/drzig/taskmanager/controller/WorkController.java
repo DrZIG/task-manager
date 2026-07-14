@@ -57,6 +57,8 @@ public class WorkController {
         model.addAttribute("work", work);
         model.addAttribute("tasks", taskService.findAll());
         model.addAttribute("selectedTaskId", taskId);
+        // Let's Cancel (and the hidden returnTaskId field) know which task to return focus to.
+        model.addAttribute("returnTaskId", taskId);
         model.addAttribute("pageTitle", "Log Work");
         return "work-form";
     }
@@ -85,6 +87,8 @@ public class WorkController {
         model.addAttribute("work", work);
         model.addAttribute("tasks", taskService.findAll());
         model.addAttribute("selectedTaskId", work.getTask().getId());
+        // Same as above — needed so Cancel returns to the originating task.
+        model.addAttribute("returnTaskId", work.getTask().getId());
         model.addAttribute("pageTitle", "Edit Work");
         return "work-form";
     }
