@@ -35,7 +35,8 @@
 
             <form th:action="${work.id != null} ? @{/works/{id}(id=${work.id})} : @{/works}"
                   th:object="${work}"
-                  method="post">
+                  method="post"
+                  id="work-form">
 
                 <!-- Task selector -->
                 <div class="mb-3">
@@ -63,7 +64,7 @@
                 <!-- Time row -->
                 <div class="row mb-3">
                     <div class="col-6">
-                        <label class="form-label fw-semibold">Start Time <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">Start Time </label>
                         <input type="text"
                                name="startTime"
                                class="form-control time-input"
@@ -71,12 +72,11 @@
                                placeholder="HH:mm"
                                pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]"
                                maxlength="5"
-                               autocomplete="off"
-                               required>
+                               autocomplete="off">
                         <div class="form-text">24h format, e.g. 08:00 or 14:30</div>
                     </div>
                     <div class="col-6">
-                        <label class="form-label fw-semibold">Finish Time <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">Finish Time </label>
                         <input type="text"
                                name="finishTime"
                                class="form-control time-input"
@@ -84,8 +84,7 @@
                                placeholder="HH:mm"
                                pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]"
                                maxlength="5"
-                               autocomplete="off"
-                               required>
+                               autocomplete="off">
                         <div class="form-text">24h format, e.g. 08:00 or 14:30</div>
                     </div>
                 </div>
@@ -205,6 +204,13 @@
     startInput.addEventListener('change', updateDuration);
     finishInput.addEventListener('change', updateDuration);
     updateDuration();
+
+    // Default any blank time field to 00:00 right before submitting.
+    document.getElementById('work-form').addEventListener('submit', function () {
+        document.querySelectorAll('.time-input').forEach(function (input) {
+            if (!input.value.trim()) input.value = '00:00';
+        });
+    });
 </script>
 </body>
 </html>

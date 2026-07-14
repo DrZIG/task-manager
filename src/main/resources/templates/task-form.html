@@ -38,6 +38,8 @@
                   th:object="${task}"
                   method="post"
                   id="task-form">
+                <input type="hidden" name="showDone" th:value="${showDone}">
+                <input type="hidden" name="showInactive" th:value="${showInactive}">
 
                 <!-- Title -->
                 <div class="mb-3">
@@ -62,6 +64,16 @@
                            placeholder="https://github.com/org/repo/issues/123">
                 </div>
 
+                <!-- Status -->
+                <div class="mb-3" th:if="${task.id != null}">
+                    <label class="form-label fw-semibold">Status</label>
+                    <select th:field="*{status}" class="form-select">
+                        <option value="ACTIVE">Active</option>
+                        <option value="DONE">Done</option>
+                        <option value="INACTIVE">Not Active</option>
+                    </select>
+                </div>
+
                 <!-- Notes -->
                 <div class="mb-4">
                     <label class="form-label fw-semibold">
@@ -70,7 +82,7 @@
                     <div id="notes-container">
                         <div th:if="${#lists.isEmpty(task.notes)}" class="note-row mb-2">
                             <div class="input-group">
-                                <input type="text" name="notes" class="form-control" placeholder="Add a note...">
+                                <input type="text" name="noteContents" class="form-control" placeholder="Add a note...">
                                 <button type="button" class="btn btn-outline-danger" onclick="removeNote(this)">
                                     <i class="bi bi-x"></i>
                                 </button>
@@ -78,7 +90,7 @@
                         </div>
                         <div th:each="note : ${task.notes}" class="note-row mb-2">
                             <div class="input-group">
-                                <input type="text" name="notes" class="form-control"
+                                <input type="text" name="noteContents" class="form-control"
                                        th:value="${note.content}" placeholder="Add a note...">
                                 <button type="button" class="btn btn-outline-danger" onclick="removeNote(this)">
                                     <i class="bi bi-x"></i>
@@ -97,7 +109,7 @@
                         <i class="bi bi-save me-1"></i>
                         <span th:text="${task.id != null} ? 'Save Changes' : 'Create Task'">Save</span>
                     </button>
-                    <a th:href="@{/}" class="btn btn-outline-secondary">Cancel</a>
+                    <a th:href="@{/(showDone=${showDone}, showInactive=${showInactive})}" class="btn btn-outline-secondary">Cancel</a>
                 </div>
             </form>
         </div>
@@ -112,7 +124,7 @@
         div.className = 'note-row mb-2';
         div.innerHTML = `
             <div class="input-group">
-                <input type="text" name="notes" class="form-control" placeholder="Add a note...">
+                <input type="text" name="noteContents" class="form-control" placeholder="Add a note...">
                 <button type="button" class="btn btn-outline-danger" onclick="removeNote(this)">
                     <i class="bi bi-x"></i>
                 </button>

@@ -17,10 +17,12 @@ public class SecurityConfig {
 
     private final UserService userService;
     private final LoginSuccessHandler loginSuccessHandler;
+    private final LoggingAccessDeniedHandler accessDeniedHandler;
 
-    public SecurityConfig(UserService userService, LoginSuccessHandler loginSuccessHandler) {
+    public SecurityConfig(UserService userService, LoginSuccessHandler loginSuccessHandler, LoggingAccessDeniedHandler accessDeniedHandler) {
         this.userService = userService;
         this.loginSuccessHandler = loginSuccessHandler;
+        this.accessDeniedHandler = accessDeniedHandler;
     }
 
     @Bean
@@ -48,6 +50,7 @@ public class SecurityConfig {
                     .logoutSuccessUrl("/login?logout")
                     .permitAll()
             )
+            .exceptionHandling(ex -> ex.accessDeniedHandler(accessDeniedHandler))
             .headers(h -> h.frameOptions(fo -> fo.sameOrigin()))
             .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**"));
 

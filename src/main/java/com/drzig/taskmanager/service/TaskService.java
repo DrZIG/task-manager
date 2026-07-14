@@ -2,6 +2,7 @@ package com.drzig.taskmanager.service;
 
 import com.drzig.taskmanager.model.Note;
 import com.drzig.taskmanager.model.Task;
+import com.drzig.taskmanager.model.TaskStatus;
 import com.drzig.taskmanager.repository.NoteRepository;
 import com.drzig.taskmanager.repository.TaskRepository;
 import org.springframework.stereotype.Service;
@@ -20,20 +21,19 @@ public class TaskService {
         this.noteRepository = noteRepository;
     }
 
+    /** Unfiltered — used where every task must be selectable regardless of status (e.g. work form dropdown). */
     public List<Task> findAll() {
         return taskRepository.findAllWithNotes();
     }
 
+    /** Filtered — used by the main task list page, respecting the show-done / show-inactive toggles. */
+    public List<Task> findByStatuses(List<TaskStatus> statuses) {
+        return taskRepository.findAllWithNotesByStatusIn(statuses);
+    }
+
     public Task findById(Long id) {
-        // Fetch with notes first (this is the entity we'll return)
-        Task task = taskRepository.findByIdWithNotes(id)
+        return taskRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new IllegalArgumentException("Task not found: " + id));
-
-        // Second query fetches works and merges into the same first-level cache entity
-        taskRepository.findByIdWithWorks(id)
-                .ifPresent(t -> task.setWorks(t.getWorks()));
-
-        return task;
     }
 
     @Transactional
@@ -49,6 +49,14 @@ public class TaskService {
             }
         }
         return taskRepository.save(task);
+    }
+
+    @Transactional
+    public void updateStatus(Long id, TaskStatus status) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Task not found: " + id));
+        task.setStatus(status);
+        taskRepository.save(task);
     }
 
     @Transactional

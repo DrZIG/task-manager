@@ -58,10 +58,26 @@
         <div class="col-lg-4 col-md-5">
             <div class="d-flex align-items-center justify-content-between mb-2">
                 <h5 class="mb-0 fw-bold"><i class="bi bi-list-task me-1 text-primary"></i> Tasks</h5>
-                <a th:href="@{/tasks/new}" class="btn btn-primary btn-sm">
+                <a th:href="@{/tasks/new(showDone=${showDone}, showInactive=${showInactive})}" class="btn btn-primary btn-sm">
                     <i class="bi bi-plus-lg"></i> New Task
                 </a>
             </div>
+
+            <!-- Visibility filter -->
+            <form th:action="@{/}" method="get" class="d-flex gap-3 align-items-center mb-2 small text-muted">
+                <div class="form-check form-check-inline mb-0">
+                    <input class="form-check-input" type="checkbox" name="showDone" value="true"
+                           id="showDoneCheck" th:checked="${showDone}" onchange="this.form.submit()">
+                    <label class="form-check-label" for="showDoneCheck">Show done</label>
+                </div>
+                <div class="form-check form-check-inline mb-0">
+                    <input class="form-check-input" type="checkbox" name="showInactive" value="true"
+                           id="showInactiveCheck" th:checked="${showInactive}" onchange="this.form.submit()">
+                    <label class="form-check-label" for="showInactiveCheck">Show not active</label>
+                </div>
+                <input type="hidden" name="showDone" value="false">
+                <input type="hidden" name="showInactive" value="false">
+            </form>
 
             <div id="task-list">
                 <div th:if="${#lists.isEmpty(tasks)}" class="text-center text-muted py-5">
@@ -71,14 +87,25 @@
 
                 <div th:each="task : ${tasks}"
                      th:id="'task-card-' + ${task.id}"
+                     th:classappend="${task.status.name() != 'ACTIVE'} ? ' task-muted' : ''"
                      class="card task-card mb-2 cursor-pointer"
                      th:onclick="|loadWorks(${task.id})|"
-                     th:ondblclick="|window.location.href='@{/tasks/__${task.id}__/edit}'|">
+                     th:ondblclick="|window.location.href='@{/tasks/__${task.id}__/edit(showDone=${showDone},showInactive=${showInactive})}'|">
 
                     <div class="card-body py-2 px-3">
                         <div class="d-flex justify-content-between align-items-start">
                             <div class="flex-grow-1 me-2" style="min-width:0">
-                                <h6 class="mb-1 text-truncate fw-semibold" th:text="${task.title}">Task Title</h6>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <h6 class="mb-0 text-truncate fw-semibold" th:text="${task.title}">Task Title</h6>
+                                    <span th:if="${task.status.name() == 'DONE'}"
+                                          class="badge bg-success-subtle text-success border border-success-subtle">
+                                        <i class="bi bi-check-circle me-1"></i>Done
+                                    </span>
+                                    <span th:if="${task.status.name() == 'INACTIVE'}"
+                                          class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+                                        <i class="bi bi-pause-circle me-1"></i>Not Active
+                                    </span>
+                                </div>
                                 <div class="text-muted small">
                                     <i class="bi bi-calendar3 me-1"></i>
                                     <span th:text="${#temporals.format(task.createdAt, 'MMM d, yyyy')}">Jan 1, 2024</span>
@@ -98,12 +125,52 @@
                                 </div>
                             </div>
                             <div class="d-flex gap-1 flex-shrink-0" onclick="event.stopPropagation()">
-                                <a th:href="@{/tasks/{id}/edit(id=${task.id})}" class="btn btn-outline-secondary btn-sm py-0 px-1" title="Edit">
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary btn-sm py-0 px-1" type="button"
+                                            data-bs-toggle="dropdown" title="Change status">
+                                        <i class="bi bi-three-dots-vertical"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li th:if="${task.status.name() != 'ACTIVE'}">
+                                            <form th:action="@{/tasks/{id}/status(id=${task.id})}" method="post">
+                                                <input type="hidden" name="status" value="ACTIVE">
+                                                <input type="hidden" name="showDone" th:value="${showDone}">
+                                                <input type="hidden" name="showInactive" th:value="${showInactive}">
+                                                <button class="dropdown-item" type="submit">
+                                                    <i class="bi bi-arrow-counterclockwise me-1"></i> Mark Active
+                                                </button>
+                                            </form>
+                                        </li>
+                                        <li th:if="${task.status.name() != 'DONE'}">
+                                            <form th:action="@{/tasks/{id}/status(id=${task.id})}" method="post">
+                                                <input type="hidden" name="status" value="DONE">
+                                                <input type="hidden" name="showDone" th:value="${showDone}">
+                                                <input type="hidden" name="showInactive" th:value="${showInactive}">
+                                                <button class="dropdown-item" type="submit">
+                                                    <i class="bi bi-check-circle me-1"></i> Mark Done
+                                                </button>
+                                            </form>
+                                        </li>
+                                        <li th:if="${task.status.name() != 'INACTIVE'}">
+                                            <form th:action="@{/tasks/{id}/status(id=${task.id})}" method="post">
+                                                <input type="hidden" name="status" value="INACTIVE">
+                                                <input type="hidden" name="showDone" th:value="${showDone}">
+                                                <input type="hidden" name="showInactive" th:value="${showInactive}">
+                                                <button class="dropdown-item" type="submit">
+                                                    <i class="bi bi-pause-circle me-1"></i> Mark Not Active
+                                                </button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <a th:href="@{/tasks/{id}/edit(id=${task.id}, showDone=${showDone}, showInactive=${showInactive})}" class="btn btn-outline-secondary btn-sm py-0 px-1" title="Edit">
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 <form th:if="${#authorization.expression('hasRole(''ADMIN'')')}"
                                       th:action="@{/tasks/{id}/delete(id=${task.id})}" method="post"
                                       onsubmit="return confirm('Delete this task and all its works?')">
+                                    <input type="hidden" name="showDone" th:value="${showDone}">
+                                    <input type="hidden" name="showInactive" th:value="${showInactive}">
                                     <button class="btn btn-outline-danger btn-sm py-0 px-1" title="Delete">
                                         <i class="bi bi-trash"></i>
                                     </button>
@@ -131,6 +198,11 @@
                         <h5 class="mb-0 fw-bold">
                             <i class="bi bi-clock me-1 text-primary"></i>
                             Works: <span id="works-task-title" class="text-primary"></span>
+                            <a id="works-task-github" href="#" target="_blank"
+                               class="ms-2 small text-decoration-none" style="display:none;"
+                               title="Open GitHub issue">
+                                <i class="bi bi-github"></i>
+                            </a>
                         </h5>
                         <a id="btn-log-work" href="#" class="btn btn-success btn-sm">
                             <i class="bi bi-plus-lg"></i> Log Work
@@ -214,6 +286,14 @@
                 document.getElementById('works-spinner').style.display = 'none';
                 document.getElementById('works-task-title').textContent = data.task.title;
                 document.getElementById('btn-log-work').href = ctx + 'works/new?taskId=' + taskId;
+
+                const githubLink = document.getElementById('works-task-github');
+                if (data.task.githubIssueLink) {
+                    githubLink.href = data.task.githubIssueLink;
+                    githubLink.style.display = 'inline';
+                } else {
+                    githubLink.style.display = 'none';
+                }
 
                 // Task meta
                 if (data.task.description || (data.task.notes && data.task.notes.length > 0)) {

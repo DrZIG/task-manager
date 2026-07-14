@@ -27,8 +27,18 @@ public interface WorkRepository extends JpaRepository<Work, Long> {
             "ORDER BY w.workDate DESC, w.startTime ASC")
     List<Work> findByDateRangeAndUser(@Param("from") LocalDate from, @Param("to") LocalDate to, @Param("userId") Long userId);
 
-    @Query(value = "SELECT work_date, SUM(EXTRACT(EPOCH FROM (finish_time - start_time)) / 60) " +
-            "FROM works WHERE work_date IN :dates AND user_id = :userId GROUP BY work_date",
+    @Query(value = """
+            SELECT 
+                work_date,
+                SUM(
+                    CASE WHEN finish_time > start_time
+                        THEN EXTRACT(EPOCH FROM (finish_time - start_time)) / 60
+                        ELSE EXTRACT(EPOCH FROM (finish_time - start_time)) / 60 + 1440
+                    END
+                )
+            FROM works
+            WHERE work_date IN :dates AND user_id = :userId GROUP BY work_date
+            """,
             nativeQuery = true)
     List<Object[]> sumMinutesByDatesAndUser(@Param("dates") List<LocalDate> dates, @Param("userId") Long userId);
 
