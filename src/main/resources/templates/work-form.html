@@ -109,7 +109,7 @@
 
                 <!-- Actions -->
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-success">
+                    <button type="submit" class="btn btn-success" id="save-btn">
                         <i class="bi bi-save me-1"></i>
                         <span th:text="${work.id != null} ? 'Save Changes' : 'Log Work'">Save</span>
                     </button>
@@ -204,6 +204,23 @@
     startInput.addEventListener('change', updateDuration);
     finishInput.addEventListener('change', updateDuration);
     updateDuration();
+
+    // ─── Prevent double-submit (e.g. accidental double-click) ─────────────
+    const workForm = document.getElementById('work-form');
+    const saveBtn = document.getElementById('save-btn');
+    let submitted = false;
+    workForm.addEventListener('submit', function (e) {
+        if (submitted) {
+            e.preventDefault();
+            return;
+        }
+        if (!workForm.checkValidity()) {
+            return;
+        }
+        submitted = true;
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+    });
 
     // Default any blank time field to 00:00 right before submitting.
     document.getElementById('work-form').addEventListener('submit', function () {
