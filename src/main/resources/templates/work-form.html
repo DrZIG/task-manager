@@ -128,8 +128,103 @@
     const preview = document.getElementById('duration-preview');
     const durationText = document.getElementById('duration-text');
 
+    // ─── Masked HH:mm overwrite editing ────────────────────────────────────
+    // Splits a time string into its 4 editable digits: [H1, H2, M1, M2].
+    // Anything that isn't already a clean "HH:MM" gets coerced first.
+    function timeDigits(value) {
+        if (!/^\d{2}:\d{2}$/.test(value)) {
+            const raw = value.replace(/[^0-9]/g, '').padEnd(4, '0').slice(0, 4);
+            value = raw.slice(0, 2) + ':' + raw.slice(2, 4);
+        }
+        return [value[0], value[1], value[3], value[4]];
+    }
+
+    // Caret sits at one of 6 positions in "HH:MM" (0..5). Map it to the digit
+    // that should be overwritten next — the colon (position 2/3) is transparent.
+    function digitIndexForCaret(pos) {
+        if (pos <= 1) return pos;
+        if (pos <= 3) return 2;
+        return 3;
+    }
+
+    const CARET_BEFORE = [0, 1, 3, 4];   // caret position immediately before digit i
+    const CARET_AFTER = [1, 3, 4, 0];    // where the caret lands after typing digit i (wraps after mm)
+
+    // Rejects keystrokes that could never be part of a valid 24h time,
+    // given what's already in the other digits.
+    // idx0 (hour tens):  0, 1, 2 only        -> hour can't start with 3-9
+    // idx1 (hour units): 0-3 if tens is '2', else 0-9  -> blocks 24-29
+    // idx2 (minute tens): 0-5 only
+    // idx3 (minute units): 0-9
+    function isDigitAllowed(idx, key, digits) {
+        if (idx === 0) return key <= '2';
+        if (idx === 1) return digits[0] === '2' ? key <= '3' : true;
+        if (idx === 2) return key <= '5';
+        return true;
+    }
+
+    // Belt-and-suspenders: if editing a digit out of order still produces an
+    // invalid hour (e.g. minutes typed first giving "_4:00", then hour tens
+    // set to "2" giving "24:00"), snap the hour back to "00".
+    function clampHour(digits) {
+        const hour = parseInt(digits[0] + digits[1], 10);
+        if (hour > 23) {
+            digits[0] = '0';
+            digits[1] = '0';
+        }
+    }
+
     document.querySelectorAll('.time-input').forEach(input => {
+
+        input.addEventListener('keydown', function (e) {
+            // If the user has an actual selection, or is using a modifier combo,
+            // let the browser handle it natively (e.g. select-all + type, copy/paste).
+            if (this.selectionStart !== this.selectionEnd || e.ctrlKey || e.metaKey || e.altKey) return;
+
+            if (/^[0-9]$/.test(e.key)) {
+                e.preventDefault();
+                const digits = timeDigits(this.value);
+                const idx = digitIndexForCaret(this.selectionStart);
+
+                if (!isDigitAllowed(idx, e.key, digits)) {
+                    return; // invalid digit for this slot — ignore, leave field untouched
+                }
+
+                digits[idx] = e.key;
+                clampHour(digits);
+                this.value = digits[0] + digits[1] + ':' + digits[2] + digits[3];
+                const next = CARET_AFTER[idx];
+                this.setSelectionRange(next, next);
+                updateDuration();
+                return;
+            }
+
+            if (e.key === 'Backspace') {
+                e.preventDefault();
+                const pos = Math.max(0, this.selectionStart - 1);
+                const digits = timeDigits(this.value);
+                const idx = digitIndexForCaret(pos);
+                digits[idx] = '0';
+                this.value = digits[0] + digits[1] + ':' + digits[2] + digits[3];
+                this.setSelectionRange(CARET_BEFORE[idx], CARET_BEFORE[idx]);
+                updateDuration();
+                return;
+            }
+
+            if (e.key === 'Delete') {
+                e.preventDefault();
+                const digits = timeDigits(this.value);
+                const idx = digitIndexForCaret(this.selectionStart);
+                digits[idx] = '0';
+                this.value = digits[0] + digits[1] + ':' + digits[2] + digits[3];
+                this.setSelectionRange(CARET_BEFORE[idx], CARET_BEFORE[idx]);
+                updateDuration();
+            }
+        });
+
+        // Fallback for anything that bypasses keydown — paste, browser autofill, etc.
         input.addEventListener('input', function () {
+            if (/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(this.value)) return; // already well-formed
             let val = this.value.replace(/[^0-9]/g, '');
             if (val.length >= 3) {
                 val = val.slice(0, 2) + ':' + val.slice(2, 4);
