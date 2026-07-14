@@ -53,7 +53,6 @@ public class WorkController {
             @RequestParam(required = false) Long taskId,
             Model model) {
         Work work = new Work();
-        work.setWorkDate(LocalDate.now());
         model.addAttribute("work", work);
         model.addAttribute("tasks", taskService.findAll());
         model.addAttribute("selectedTaskId", taskId);

@@ -84,9 +84,9 @@ public class TaskController {
             @RequestParam(required = false, defaultValue = "false") boolean showDone,
             @RequestParam(required = false, defaultValue = "false") boolean showInactive,
             RedirectAttributes redirectAttributes) {
-        taskService.save(task, noteContents);
+        Task saved = taskService.save(task, noteContents);
         redirectAttributes.addFlashAttribute("success", "Task created successfully.");
-        return "redirect:/?showDone=" + showDone + "&showInactive=" + showInactive;
+        return "redirect:/?showDone=" + showDone + "&showInactive=" + showInactive + "&taskId=" + saved.getId();
     }
 
     // ─── Edit task ────────────────────────────────────────────────────────────
@@ -115,7 +115,7 @@ public class TaskController {
         task.setId(id);
         taskService.save(task, noteContents);
         redirectAttributes.addFlashAttribute("success", "Task updated successfully.");
-        return "redirect:/?showDone=" + showDone + "&showInactive=" + showInactive;
+        return "redirect:/?showDone=" + showDone + "&showInactive=" + showInactive + "&taskId=" + id;
     }
 
     // ─── Change task status (quick action from card) ───────────────────────────
@@ -129,7 +129,7 @@ public class TaskController {
             RedirectAttributes redirectAttributes) {
         taskService.updateStatus(id, status);
         redirectAttributes.addFlashAttribute("success", "Task marked as " + status.name().toLowerCase() + ".");
-        return "redirect:/?showDone=" + showDone + "&showInactive=" + showInactive;
+        return "redirect:/?showDone=" + showDone + "&showInactive=" + showInactive + "&taskId=" + id;
     }
 
     // ─── Delete task ──────────────────────────────────────────────────────────

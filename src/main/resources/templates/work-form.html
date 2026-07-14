@@ -57,8 +57,11 @@
                     <input type="date"
                            name="workDate"
                            class="form-control"
-                           th:value="${#temporals.format(work.workDate, 'yyyy-MM-dd')}"
+                           th:value="${work.workDate != null ? #temporals.format(work.workDate, 'yyyy-MM-dd') : ''}"
                            required>
+                    <div class="form-text" id="workdate-hint" style="display:none;">
+                        <i class="bi bi-geo-alt me-1"></i>Defaulted to today's date on your device.
+                    </div>
                 </div>
 
                 <!-- Time row -->
@@ -123,6 +126,23 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+    // Fill in the client's local date for NEW work entries only.
+    // Edit forms already have a th:value from the persisted work, so this
+    // leaves them untouched. Using Date's local getters (not toISOString(),
+    // which is UTC) avoids off-by-one-day bugs near midnight.
+    (function initClientDate() {
+        const dateInput = document.querySelector('input[name="workDate"]');
+        if (dateInput && !dateInput.value) {
+            const now = new Date();
+            const yyyy = now.getFullYear();
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            dateInput.value = `${yyyy}-${mm}-${dd}`;
+            const hint = document.getElementById('workdate-hint');
+            if (hint) hint.style.display = 'block';
+        }
+    })();
+
     const startInput = document.querySelector('input[name="startTime"]');
     const finishInput = document.querySelector('input[name="finishTime"]');
     const preview = document.getElementById('duration-preview');
