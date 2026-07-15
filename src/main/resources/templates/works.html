@@ -116,7 +116,10 @@
             <tbody>
                 <!-- Group visually by date using row styling -->
                 <tr th:each="ws, stat : ${works}"
-                    th:classappend="${stat.index > 0 and ws.work.workDate != works[stat.index - 1].work.workDate} ? 'border-top-2' : ''">
+                    th:classappend="${stat.index > 0 and ws.work.workDate != works[stat.index - 1].work.workDate} ? 'border-top-2' : ''"
+                    style="cursor:pointer;"
+                    title="Double-click to edit"
+                    th:ondblclick="|window.location.href='@{/works/__${ws.work.id}__/edit(from=works)}'|">
 
                     <td class="text-nowrap small fw-semibold">
                         <span th:text="${#temporals.format(ws.work.workDate, 'EEE, MMM d yyyy')}">Mon, Jan 1 2024</span>
@@ -124,6 +127,7 @@
                     <td>
                         <a th:href="@{/(taskId=${ws.work.task.id})}"
                            class="text-decoration-none fw-semibold small"
+                           onclick="event.stopPropagation()"
                            th:text="${ws.work.task.title}">Task title</a>
                     </td>
                     <td th:if="${isAdmin}" class="small">
@@ -149,8 +153,8 @@
                     <td class="small" style="max-width: 250px;">
                         <span th:text="${ws.work.description ?: '—'}">Description text</span>
                     </td>
-                    <td class="text-nowrap">
-                        <a th:href="@{/works/{id}/edit(id=${ws.work.id})}"
+                    <td class="text-nowrap" onclick="event.stopPropagation()">
+                        <a th:href="@{/works/{id}/edit(id=${ws.work.id}, from='works')}"
                            class="btn btn-outline-secondary btn-sm py-0 px-1 me-1" title="Edit">
                             <i class="bi bi-pencil"></i>
                         </a>
