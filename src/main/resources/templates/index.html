@@ -212,7 +212,7 @@
                     <!-- Task description/notes summary -->
                     <div id="task-meta" class="card bg-light border-0 mb-3" style="display:none;">
                         <div class="card-body py-2 px-3">
-                            <p id="task-description" class="mb-1 small"></p>
+                            <p id="task-description" class="mb-1 small preserve-lines"></p>
                             <div id="task-notes-wrapper" style="display:none;">
                                 <strong class="small text-muted">Notes:</strong>
                                 <ul id="task-notes" class="mb-0 small ps-3"></ul>
@@ -340,7 +340,7 @@
                         <td class="text-nowrap small">${formatTime(w.finishTime)}</td>
                         <td class="text-nowrap"><span class="badge bg-primary-subtle text-primary border border-primary-subtle">${w.formattedDuration}</span></td>
                         <td class="text-nowrap"><span class="badge bg-success-subtle text-success border border-success-subtle">${ws.formattedDailyTotal}</span></td>
-                        <td class="small">${escHtml(w.description || '—')}</td>
+                        <td class="small preserve-lines">${escHtml(w.description || '—')}</td>
                         <td class="text-nowrap">
                             <a href="${ctx}works/${w.id}/edit" class="btn btn-outline-secondary btn-sm py-0 px-1" title="Edit"><i class="bi bi-pencil"></i></a>
                             ${deleteBtn}

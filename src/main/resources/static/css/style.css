@@ -24,6 +24,11 @@
 /* ─── Utilities ──────────────────────────────────────────────────── */
 .cursor-pointer { cursor: pointer; }
 
+/* Preserve line breaks typed into descriptions/notes without wrapping the whole line */
+.preserve-lines {
+    white-space: pre-line;
+}
+
 /* ─── Navbar ─────────────────────────────────────────────────────── */
 .navbar-brand {
     font-size: 1.1rem;

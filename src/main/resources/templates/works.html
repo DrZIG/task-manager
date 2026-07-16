@@ -53,7 +53,7 @@
                 <i class="bi bi-clock-history me-1 text-primary"></i> All Works
             </h4>
         </div>
-        <a th:href="@{/works/new}" class="btn btn-success btn-sm">
+        <a th:href="@{/works/new(from='works')}" class="btn btn-success btn-sm">
             <i class="bi bi-plus-lg"></i> Log Work
         </a>
     </div>
@@ -150,7 +150,7 @@
                         <span class="badge bg-success-subtle text-success border border-success-subtle"
                               th:text="${ws.formattedDailyTotal}">5h</span>
                     </td>
-                    <td class="small" style="max-width: 250px;">
+                    <td class="small preserve-lines" style="max-width: 250px;">
                         <span th:text="${ws.work.description ?: '—'}">Description text</span>
                     </td>
                     <td class="text-nowrap" onclick="event.stopPropagation()">

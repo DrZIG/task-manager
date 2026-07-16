@@ -14,17 +14,17 @@ public interface WorkRepository extends JpaRepository<Work, Long> {
 
     @Query("SELECT w FROM Work w JOIN FETCH w.task JOIN FETCH w.user " +
             "WHERE w.task.id = :taskId AND w.user.id = :userId " +
-            "ORDER BY w.workDate DESC, w.startTime ASC")
+            "ORDER BY w.workDate DESC, w.startTime DESC")
     List<Work> findByTaskIdAndUserOrderByDateAndTime(@Param("taskId") Long taskId, @Param("userId") Long userId);
 
     @Query("SELECT w FROM Work w JOIN FETCH w.task JOIN FETCH w.user " +
             "WHERE w.user.id = :userId " +
-            "ORDER BY w.workDate DESC, w.startTime ASC")
+            "ORDER BY w.workDate DESC, w.startTime DESC")
     List<Work> findByUserOrderByDateAndTime(@Param("userId") Long userId);
 
     @Query("SELECT w FROM Work w JOIN FETCH w.task JOIN FETCH w.user " +
             "WHERE w.workDate BETWEEN :from AND :to AND w.user.id = :userId " +
-            "ORDER BY w.workDate DESC, w.startTime ASC")
+            "ORDER BY w.workDate DESC, w.startTime DESC")
     List<Work> findByDateRangeAndUser(@Param("from") LocalDate from, @Param("to") LocalDate to, @Param("userId") Long userId);
 
     @Query(value = """
@@ -46,16 +46,16 @@ public interface WorkRepository extends JpaRepository<Work, Long> {
 
     @Query("SELECT w FROM Work w JOIN FETCH w.task JOIN FETCH w.user " +
             "WHERE w.task.id = :taskId " +
-            "ORDER BY w.workDate DESC, w.startTime ASC")
+            "ORDER BY w.workDate DESC, w.startTime DESC")
     List<Work> findByTaskIdOrderByDateAndTime(@Param("taskId") Long taskId);
 
     @Query("SELECT w FROM Work w JOIN FETCH w.task JOIN FETCH w.user " +
             "WHERE w.workDate BETWEEN :from AND :to " +
-            "ORDER BY w.workDate DESC, w.startTime ASC")
+            "ORDER BY w.workDate DESC, w.startTime DESC")
     List<Work> findByDateRange(@Param("from") LocalDate from, @Param("to") LocalDate to);
 
     @Query("SELECT w FROM Work w JOIN FETCH w.task JOIN FETCH w.user " +
-            "ORDER BY w.workDate DESC, w.startTime ASC")
+            "ORDER BY w.workDate DESC, w.startTime DESC")
     List<Work> findAllWithTask();
 
     @Query(value = """
