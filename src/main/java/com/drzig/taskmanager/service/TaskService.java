@@ -38,17 +38,29 @@ public class TaskService {
 
     @Transactional
     public Task save(Task task, List<String> noteContents) {
+        Task target;
+        if (task.getId() != null) {
+            target = taskRepository.findById(task.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Task not found: " + task.getId()));
+            target.setTitle(task.getTitle());
+            target.setDescription(task.getDescription());
+            target.setGithubIssueLink(task.getGithubIssueLink());
+            target.setStatus(task.getStatus());
+        } else {
+            target = task;
+        }
+
         // Clear and re-add notes so orphanRemoval handles deleted ones
-        task.getNotes().clear();
+        target.getNotes().clear();
         if (noteContents != null) {
             for (String content : noteContents) {
                 if (content != null && !content.isBlank()) {
-                    Note note = new Note(content.trim(), task);
-                    task.getNotes().add(note);
+                    Note note = new Note(content.trim(), target);
+                    target.getNotes().add(note);
                 }
             }
         }
-        return taskRepository.save(task);
+        return taskRepository.save(target);
     }
 
     @Transactional
