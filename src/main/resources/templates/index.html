@@ -263,8 +263,31 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script th:inline="javascript">
     let activeTaskId = null;
+    const ctx = /*[[@{/}]]*/ '/';
+    const isAdmin = document.getElementById('user-is-admin').dataset.admin === 'true';
 
-    function loadWorks(taskId) {
+    // ─── Session-expiry detection ──────────────────────────────────────────
+    // Spring Security responds to an expired-session request for a protected
+    // resource with a redirect to /login. fetch() follows redirects silently
+    // by default, so an AJAX call like loadWorks() would otherwise receive
+    // the login page's HTML instead of JSON, fail to parse it, and fall
+    // through to a misleading "No work logged yet" empty state.
+    //
+    // We treat any of the following as "session expired" and send the user
+    // to /login instead of pretending everything is fine:
+    //   - the fetch was redirected and landed on /login
+    //   - the response isn't JSON (e.g. it's the login page's HTML)
+    function looksLikeLoginRedirect(response) {
+        if (response.redirected && response.url.indexOf('/login') !== -1) return true;
+        const contentType = response.headers.get('content-type') || '';
+        return contentType.indexOf('application/json') === -1;
+    }
+
+    function redirectToLogin() {
+        window.location.href = ctx + 'login';
+    }
+
+    async function loadWorks(taskId) {
         document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active-task'));
         const activeCard = document.getElementById('task-card-' + taskId);
         if (activeCard) activeCard.classList.add('active-task');
@@ -277,82 +300,102 @@
         document.getElementById('works-empty').style.display = 'none';
         document.getElementById('task-meta').style.display = 'none';
 
-        const ctx = /*[[@{/}]]*/ '/';
-        const isAdmin = document.getElementById('user-is-admin').dataset.admin === 'true';
+        let response;
+        try {
+            response = await fetch(ctx + 'api/tasks/' + taskId + '/works');
+        } catch (e) {
+            document.getElementById('works-spinner').style.display = 'none';
+            document.getElementById('works-empty').style.display = 'block';
+            return;
+        }
 
-        fetch(ctx + 'api/tasks/' + taskId + '/works')
-            .then(r => r.json())
-            .then(data => {
-                document.getElementById('works-spinner').style.display = 'none';
-                document.getElementById('works-task-title').textContent = data.task.title;
-                document.getElementById('btn-log-work').href = ctx + 'works/new?taskId=' + taskId;
+        if (looksLikeLoginRedirect(response)) {
+            redirectToLogin();
+            return;
+        }
 
-                const githubLink = document.getElementById('works-task-github');
-                if (data.task.githubIssueLink) {
-                    githubLink.href = data.task.githubIssueLink;
-                    githubLink.style.display = 'inline';
-                } else {
-                    githubLink.style.display = 'none';
-                }
+        if (!response.ok) {
+            document.getElementById('works-spinner').style.display = 'none';
+            document.getElementById('works-empty').style.display = 'block';
+            return;
+        }
 
-                // Task meta
-                if (data.task.description || (data.task.notes && data.task.notes.length > 0)) {
-                    document.getElementById('task-meta').style.display = 'block';
-                    document.getElementById('task-description').textContent = data.task.description || '';
-                    const notesList = document.getElementById('task-notes');
-                    notesList.innerHTML = '';
-                    if (data.task.notes && data.task.notes.length > 0) {
-                        document.getElementById('task-notes-wrapper').style.display = 'block';
-                        data.task.notes.forEach(n => {
-                            const li = document.createElement('li');
-                            li.textContent = n.content;
-                            notesList.appendChild(li);
-                        });
-                    } else {
-                        document.getElementById('task-notes-wrapper').style.display = 'none';
-                    }
-                }
+        let data;
+        try {
+            data = await response.json();
+        } catch (e) {
+            // Not valid JSON — most likely an expired-session HTML page that
+            // slipped past the checks above. Safer to send to login than to
+            // show a false "no work" state.
+            redirectToLogin();
+            return;
+        }
 
-                if (!data.works || data.works.length === 0) {
-                    document.getElementById('works-empty').style.display = 'block';
-                    return;
-                }
+        document.getElementById('works-spinner').style.display = 'none';
+        document.getElementById('works-task-title').textContent = data.task.title;
+        document.getElementById('btn-log-work').href = ctx + 'works/new?taskId=' + taskId;
 
-                document.getElementById('works-table-wrapper').style.display = 'block';
-                const tbody = document.getElementById('works-tbody');
-                tbody.innerHTML = '';
-                data.works.forEach(ws => {
-                    const w = ws.work;
-                    const tr = document.createElement('tr');
-                    tr.style.cursor = 'pointer';
-                    tr.ondblclick = () => { window.location.href = `${ctx}works/${w.id}/edit?taskId=${taskId}`; };
+        const githubLink = document.getElementById('works-task-github');
+        if (data.task.githubIssueLink) {
+            githubLink.href = data.task.githubIssueLink;
+            githubLink.style.display = 'inline';
+        } else {
+            githubLink.style.display = 'none';
+        }
 
-                    const deleteBtn = isAdmin ? `
-                        <form action="${ctx}works/${w.id}/delete" method="post" style="display:inline"
-                              onsubmit="return confirm('Delete this work entry?')">
-                            <input type="hidden" name="_csrf" value="${getCsrfToken()}">
-                            <button class="btn btn-outline-danger btn-sm py-0 px-1" title="Delete"><i class="bi bi-trash"></i></button>
-                        </form>` : '';
-
-                    tr.innerHTML = `
-                        <td class="text-nowrap small">${formatDate(w.workDate)}</td>
-                        <td class="text-nowrap small">${formatTime(w.startTime)}</td>
-                        <td class="text-nowrap small">${formatTime(w.finishTime)}</td>
-                        <td class="text-nowrap"><span class="badge bg-primary-subtle text-primary border border-primary-subtle">${w.formattedDuration}</span></td>
-                        <td class="text-nowrap"><span class="badge bg-success-subtle text-success border border-success-subtle">${ws.formattedDailyTotal}</span></td>
-                        <td class="small preserve-lines">${escHtml(w.description || '—')}</td>
-                        <td class="text-nowrap">
-                            <a href="${ctx}works/${w.id}/edit" class="btn btn-outline-secondary btn-sm py-0 px-1" title="Edit"><i class="bi bi-pencil"></i></a>
-                            ${deleteBtn}
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
+        // Task meta
+        if (data.task.description || (data.task.notes && data.task.notes.length > 0)) {
+            document.getElementById('task-meta').style.display = 'block';
+            document.getElementById('task-description').textContent = data.task.description || '';
+            const notesList = document.getElementById('task-notes');
+            notesList.innerHTML = '';
+            if (data.task.notes && data.task.notes.length > 0) {
+                document.getElementById('task-notes-wrapper').style.display = 'block';
+                data.task.notes.forEach(n => {
+                    const li = document.createElement('li');
+                    li.textContent = n.content;
+                    notesList.appendChild(li);
                 });
-            })
-            .catch(() => {
-                document.getElementById('works-spinner').style.display = 'none';
-                document.getElementById('works-empty').style.display = 'block';
-            });
+            } else {
+                document.getElementById('task-notes-wrapper').style.display = 'none';
+            }
+        }
+
+        if (!data.works || data.works.length === 0) {
+            document.getElementById('works-empty').style.display = 'block';
+            return;
+        }
+
+        document.getElementById('works-table-wrapper').style.display = 'block';
+        const tbody = document.getElementById('works-tbody');
+        tbody.innerHTML = '';
+        data.works.forEach(ws => {
+            const w = ws.work;
+            const tr = document.createElement('tr');
+            tr.style.cursor = 'pointer';
+            tr.ondblclick = () => { window.location.href = `${ctx}works/${w.id}/edit?taskId=${taskId}`; };
+
+            const deleteBtn = isAdmin ? `
+                <form action="${ctx}works/${w.id}/delete" method="post" style="display:inline"
+                      onsubmit="return confirm('Delete this work entry?')">
+                    <input type="hidden" name="_csrf" value="${getCsrfToken()}">
+                    <button class="btn btn-outline-danger btn-sm py-0 px-1" title="Delete"><i class="bi bi-trash"></i></button>
+                </form>` : '';
+
+            tr.innerHTML = `
+                <td class="text-nowrap small">${formatDate(w.workDate)}</td>
+                <td class="text-nowrap small">${formatTime(w.startTime)}</td>
+                <td class="text-nowrap small">${formatTime(w.finishTime)}</td>
+                <td class="text-nowrap"><span class="badge bg-primary-subtle text-primary border border-primary-subtle">${w.formattedDuration}</span></td>
+                <td class="text-nowrap"><span class="badge bg-success-subtle text-success border border-success-subtle">${ws.formattedDailyTotal}</span></td>
+                        <td class="small preserve-lines">${escHtml(w.description || '—')}</td>
+                <td class="text-nowrap">
+                    <a href="${ctx}works/${w.id}/edit" class="btn btn-outline-secondary btn-sm py-0 px-1" title="Edit"><i class="bi bi-pencil"></i></a>
+                    ${deleteBtn}
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
     }
 
     // Jackson serializes LocalDate as "2026-05-21" — reformat to "May 21, 2026" for display
@@ -377,6 +420,32 @@
         const meta = document.querySelector('meta[name="_csrf"]');
         return meta ? meta.getAttribute('content') : '';
     }
+
+    // ─── Proactive session check ────────────────────────────────────────────
+    // Covers the "came back from lunch, page still looks logged in" case:
+    // when the tab regains focus, or every 5 minutes while it's open, quietly
+    // verify the session is still valid and bounce to /login if it isn't —
+    // without waiting for the user to click something first.
+    async function checkSession() {
+        try {
+            const response = await fetch(ctx, { method: 'HEAD', redirect: 'manual', cache: 'no-store' });
+            // With redirect:'manual', a same-origin redirect (e.g. to /login)
+            // comes back as an opaque response we can't inspect directly —
+            // but its presence itself means we got redirected, i.e. the
+            // session is no longer valid for the protected "/" route.
+            if (response.type === 'opaqueredirect') {
+                redirectToLogin();
+            }
+        } catch (e) {
+            // Network hiccup — don't force a redirect on a transient error.
+        }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) checkSession();
+    });
+
+    setInterval(checkSession, 5 * 60 * 1000); // every 5 minutes while the tab is open
 
     const params = new URLSearchParams(window.location.search);
     const preselect = params.get('taskId');
