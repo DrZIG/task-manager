@@ -63,6 +63,18 @@
                 </a>
             </div>
 
+            <!-- Instant search (front-end only, filters the cards already on the page) -->
+            <div class="input-group input-group-sm mb-2">
+                <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                <input type="text" id="taskSearchInput" class="form-control"
+                       placeholder="Search title, GitHub link, description, notes..."
+                       oninput="filterTasks()" autocomplete="off">
+                <button type="button" id="taskSearchClear" class="btn btn-outline-secondary"
+                        style="display:none;" title="Clear search" onclick="clearTaskSearch()">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
             <!-- Visibility filter -->
             <form th:action="@{/}" method="get" class="d-flex gap-3 align-items-center mb-2 small text-muted">
                 <div class="form-check form-check-inline mb-0">
@@ -88,6 +100,11 @@
                 <div th:each="task : ${tasks}"
                      th:id="'task-card-' + ${task.id}"
                      th:classappend="${task.status.name() != 'ACTIVE'} ? ' task-muted' : ''"
+                     th:attr="data-search=${#strings.toLowerCase(
+                                (task.title ?: '') + ' ' +
+                                (task.description ?: '') + ' ' +
+                                (task.githubIssueLink ?: '') + ' ' +
+                                #strings.listJoin(task.notes.![content], ' '))}"
                      class="card task-card mb-2 cursor-pointer"
                      th:onclick="|loadWorks(${task.id})|"
                      th:ondblclick="|window.location.href='@{/tasks/__${task.id}__/edit(showDone=${showDone},showInactive=${showInactive})}'|">
@@ -178,6 +195,12 @@
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- Shown by JS when a search yields zero matches -->
+                <div id="task-search-empty" class="text-center text-muted py-5" style="display:none;">
+                    <i class="bi bi-search fs-1 d-block mb-2"></i>
+                    No tasks match your search.
                 </div>
             </div>
         </div>
@@ -287,6 +310,37 @@
         window.location.href = ctx + 'login';
     }
 
+    // ─── Instant client-side task search ───────────────────────────────────
+    // Filters the task cards that are already rendered on the page — no
+    // server round-trip. Matches against each card's data-search attribute,
+    // which bundles title + description + GitHub link + note contents,
+    // all pre-lowercased server-side.
+    function filterTasks() {
+        const query = document.getElementById('taskSearchInput').value.trim().toLowerCase();
+        document.getElementById('taskSearchClear').style.display = query ? 'inline-block' : 'none';
+
+        const cards = document.querySelectorAll('#task-list .task-card');
+        let visibleCount = 0;
+        cards.forEach(card => {
+            const haystack = card.dataset.search || '';
+            const matches = !query || haystack.includes(query);
+            card.style.display = matches ? '' : 'none';
+            if (matches) visibleCount++;
+        });
+
+        const emptyState = document.getElementById('task-search-empty');
+        if (emptyState) {
+            emptyState.style.display = (query && visibleCount === 0) ? 'block' : 'none';
+        }
+    }
+
+    function clearTaskSearch() {
+        const input = document.getElementById('taskSearchInput');
+        input.value = '';
+        input.focus();
+        filterTasks();
+    }
+
     async function loadWorks(taskId) {
         document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active-task'));
         const activeCard = document.getElementById('task-card-' + taskId);
@@ -331,71 +385,71 @@
             return;
         }
 
-        document.getElementById('works-spinner').style.display = 'none';
-        document.getElementById('works-task-title').textContent = data.task.title;
-        document.getElementById('btn-log-work').href = ctx + 'works/new?taskId=' + taskId;
+                document.getElementById('works-spinner').style.display = 'none';
+                document.getElementById('works-task-title').textContent = data.task.title;
+                document.getElementById('btn-log-work').href = ctx + 'works/new?taskId=' + taskId;
 
-        const githubLink = document.getElementById('works-task-github');
-        if (data.task.githubIssueLink) {
-            githubLink.href = data.task.githubIssueLink;
-            githubLink.style.display = 'inline';
-        } else {
-            githubLink.style.display = 'none';
-        }
+                const githubLink = document.getElementById('works-task-github');
+                if (data.task.githubIssueLink) {
+                    githubLink.href = data.task.githubIssueLink;
+                    githubLink.style.display = 'inline';
+                } else {
+                    githubLink.style.display = 'none';
+                }
 
-        // Task meta
-        if (data.task.description || (data.task.notes && data.task.notes.length > 0)) {
-            document.getElementById('task-meta').style.display = 'block';
-            document.getElementById('task-description').textContent = data.task.description || '';
-            const notesList = document.getElementById('task-notes');
-            notesList.innerHTML = '';
-            if (data.task.notes && data.task.notes.length > 0) {
-                document.getElementById('task-notes-wrapper').style.display = 'block';
-                data.task.notes.forEach(n => {
-                    const li = document.createElement('li');
-                    li.textContent = n.content;
-                    notesList.appendChild(li);
-                });
-            } else {
-                document.getElementById('task-notes-wrapper').style.display = 'none';
-            }
-        }
+                // Task meta
+                if (data.task.description || (data.task.notes && data.task.notes.length > 0)) {
+                    document.getElementById('task-meta').style.display = 'block';
+                    document.getElementById('task-description').textContent = data.task.description || '';
+                    const notesList = document.getElementById('task-notes');
+                    notesList.innerHTML = '';
+                    if (data.task.notes && data.task.notes.length > 0) {
+                        document.getElementById('task-notes-wrapper').style.display = 'block';
+                        data.task.notes.forEach(n => {
+                            const li = document.createElement('li');
+                            li.textContent = n.content;
+                            notesList.appendChild(li);
+                        });
+                    } else {
+                        document.getElementById('task-notes-wrapper').style.display = 'none';
+                    }
+                }
 
-        if (!data.works || data.works.length === 0) {
-            document.getElementById('works-empty').style.display = 'block';
-            return;
-        }
+                if (!data.works || data.works.length === 0) {
+                    document.getElementById('works-empty').style.display = 'block';
+                    return;
+                }
 
-        document.getElementById('works-table-wrapper').style.display = 'block';
-        const tbody = document.getElementById('works-tbody');
-        tbody.innerHTML = '';
-        data.works.forEach(ws => {
-            const w = ws.work;
-            const tr = document.createElement('tr');
-            tr.style.cursor = 'pointer';
-            tr.ondblclick = () => { window.location.href = `${ctx}works/${w.id}/edit?taskId=${taskId}`; };
+                document.getElementById('works-table-wrapper').style.display = 'block';
+                const tbody = document.getElementById('works-tbody');
+                tbody.innerHTML = '';
+                data.works.forEach(ws => {
+                    const w = ws.work;
+                    const tr = document.createElement('tr');
+                    tr.style.cursor = 'pointer';
+                    tr.ondblclick = () => { window.location.href = `${ctx}works/${w.id}/edit?taskId=${taskId}`; };
 
-            const deleteBtn = isAdmin ? `
-                <form action="${ctx}works/${w.id}/delete" method="post" style="display:inline"
-                      onsubmit="return confirm('Delete this work entry?')">
-                    <input type="hidden" name="_csrf" value="${getCsrfToken()}">
-                    <button class="btn btn-outline-danger btn-sm py-0 px-1" title="Delete"><i class="bi bi-trash"></i></button>
-                </form>` : '';
+                    const deleteBtn = isAdmin ? `
+                        <form action="${ctx}works/${w.id}/delete" method="post" style="display:inline"
+                              onsubmit="return confirm('Delete this work entry?')">
+                            <input type="hidden" name="_csrf" value="${getCsrfToken()}">
+                            <button class="btn btn-outline-danger btn-sm py-0 px-1" title="Delete"><i class="bi bi-trash"></i></button>
+                        </form>` : '';
 
-            tr.innerHTML = `
-                <td class="text-nowrap small">${formatDate(w.workDate)}</td>
-                <td class="text-nowrap small">${formatTime(w.startTime)}</td>
-                <td class="text-nowrap small">${formatTime(w.finishTime)}</td>
-                <td class="text-nowrap"><span class="badge bg-primary-subtle text-primary border border-primary-subtle">${w.formattedDuration}</span></td>
-                <td class="text-nowrap"><span class="badge bg-success-subtle text-success border border-success-subtle">${ws.formattedDailyTotal}</span></td>
+                    tr.innerHTML = `
+                        <td class="text-nowrap small">${formatDate(w.workDate)}</td>
+                        <td class="text-nowrap small">${formatTime(w.startTime)}</td>
+                        <td class="text-nowrap small">${formatTime(w.finishTime)}</td>
+                        <td class="text-nowrap"><span class="badge bg-primary-subtle text-primary border border-primary-subtle">${w.formattedDuration}</span></td>
+                        <td class="text-nowrap"><span class="badge bg-success-subtle text-success border border-success-subtle">${ws.formattedDailyTotal}</span></td>
                         <td class="small preserve-lines">${escHtml(w.description || '—')}</td>
-                <td class="text-nowrap">
-                    <a href="${ctx}works/${w.id}/edit" class="btn btn-outline-secondary btn-sm py-0 px-1" title="Edit"><i class="bi bi-pencil"></i></a>
-                    ${deleteBtn}
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
+                        <td class="text-nowrap">
+                            <a href="${ctx}works/${w.id}/edit" class="btn btn-outline-secondary btn-sm py-0 px-1" title="Edit"><i class="bi bi-pencil"></i></a>
+                            ${deleteBtn}
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
     }
 
     // Jackson serializes LocalDate as "2026-05-21" — reformat to "May 21, 2026" for display
