@@ -19,4 +19,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     @Query("SELECT DISTINCT t FROM Task t LEFT JOIN FETCH t.notes WHERE t.id = :id")
     Optional<Task> findByIdWithDetails(Long id);
+
+    /** id + githubIssueLink pairs for all tasks that have a non-blank link — used for client-side duplicate checking on the task form. */
+    @Query("SELECT t.id, t.githubIssueLink FROM Task t WHERE t.githubIssueLink IS NOT NULL AND t.githubIssueLink <> ''")
+    List<Object[]> findAllGithubIssueLinks();
 }

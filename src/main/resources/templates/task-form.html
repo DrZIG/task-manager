@@ -61,7 +61,12 @@
                         <i class="bi bi-github me-1"></i> GitHub Issue Link
                     </label>
                     <input type="url" th:field="*{githubIssueLink}" class="form-control"
-                           placeholder="https://github.com/org/repo/issues/123">
+                           placeholder="https://github.com/org/repo/issues/123"
+                           autocomplete="off">
+                    <div id="github-link-error" class="text-danger small mt-1" style="display:none;">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        <span id="github-link-error-text"></span>
+                    </div>
                 </div>
 
                 <!-- Status -->
@@ -105,7 +110,7 @@
 
                 <!-- Actions -->
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary" id="save-btn">
                         <i class="bi bi-save me-1"></i>
                         <span th:text="${task.id != null} ? 'Save Changes' : 'Create Task'">Save</span>
                     </button>
@@ -117,7 +122,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
+<script th:inline="javascript">
     function addNote() {
         const container = document.getElementById('notes-container');
         const div = document.createElement('div');
@@ -136,6 +141,52 @@
     function removeNote(btn) {
         btn.closest('.note-row').remove();
     }
+
+    // ─── GitHub issue link duplicate check ─────────────────────────────────
+    // existingLinks: { "3": "https://github.com/org/repo/issues/1", ... } — every
+    // task that currently has a link, keyed by task id. currentTaskId is null on
+    // the "new task" form, so nothing gets excluded there.
+    const existingLinks = /*[[${existingLinks}]]*/ {};
+    const currentTaskId = /*[[${task.id}]]*/ null;
+
+    const githubInput = document.getElementById('githubIssueLink');
+    const errorDiv = document.getElementById('github-link-error');
+    const errorText = document.getElementById('github-link-error-text');
+    const saveBtn = document.getElementById('save-btn');
+
+    function normalizeLink(url) {
+        return (url || '').trim().toLowerCase().replace(/\/+$/, '');
+    }
+
+    function checkDuplicateLink() {
+        const value = normalizeLink(githubInput.value);
+        let duplicateTaskId = null;
+
+        if (value) {
+            for (const [taskId, link] of Object.entries(existingLinks)) {
+                if (currentTaskId != null && String(taskId) === String(currentTaskId)) continue; // skip self
+                if (normalizeLink(link) === value) {
+                    duplicateTaskId = taskId;
+                    break;
+                }
+            }
+        }
+
+        if (duplicateTaskId) {
+            errorText.textContent = 'This GitHub issue link is already used by another task.';
+            errorDiv.style.display = 'block';
+            githubInput.classList.add('is-invalid');
+            saveBtn.disabled = true;
+        } else {
+            errorDiv.style.display = 'none';
+            githubInput.classList.remove('is-invalid');
+            saveBtn.disabled = false;
+        }
+    }
+
+    githubInput.addEventListener('input', checkDuplicateLink);
+    githubInput.addEventListener('blur', checkDuplicateLink);
+    checkDuplicateLink(); // run once on load, in case of pre-filled/autofilled value
 </script>
 </body>
 </html>

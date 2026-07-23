@@ -74,6 +74,7 @@ public class TaskController {
         model.addAttribute("pageTitle", "New Task");
         model.addAttribute("showDone", showDone);
         model.addAttribute("showInactive", showInactive);
+        model.addAttribute("existingLinks", taskService.findAllGithubIssueLinks());
         return "task-form";
     }
 
@@ -101,6 +102,7 @@ public class TaskController {
         model.addAttribute("pageTitle", "Edit Task");
         model.addAttribute("showDone", showDone);
         model.addAttribute("showInactive", showInactive);
+        model.addAttribute("existingLinks", taskService.findAllGithubIssueLinks());
         return "task-form";
     }
 

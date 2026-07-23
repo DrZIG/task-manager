@@ -8,7 +8,9 @@ import com.drzig.taskmanager.repository.TaskRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class TaskService {
@@ -34,6 +36,18 @@ public class TaskService {
     public Task findById(Long id) {
         return taskRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new IllegalArgumentException("Task not found: " + id));
+    }
+
+    /**
+     * Map of taskId -> githubIssueLink for every task that has a link set.
+     * Used by the task form to flag duplicate GitHub issue links client-side.
+     */
+    public Map<Long, String> findAllGithubIssueLinks() {
+        Map<Long, String> map = new HashMap<>();
+        for (Object[] row : taskRepository.findAllGithubIssueLinks()) {
+            map.put((Long) row[0], (String) row[1]);
+        }
+        return map;
     }
 
     @Transactional
