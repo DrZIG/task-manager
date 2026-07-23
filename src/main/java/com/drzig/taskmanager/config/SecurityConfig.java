@@ -33,26 +33,34 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/css/**", "/h2-console/**").permitAll()
-                    .requestMatchers("/admin/**").hasRole("ADMIN")   // admin only
-                    .requestMatchers("/change-password").authenticated()
-                    // /register is NO LONGER permitted
-                    .anyRequest().authenticated()
-            )
-            .formLogin(form -> form
-                    .loginPage("/login")
-                    .successHandler(loginSuccessHandler)   // custom handler checks the flag
-                    .permitAll()
-            )
-            .logout(logout -> logout
-                    .logoutUrl("/logout")
-                    .logoutSuccessUrl("/login?logout")
-                    .permitAll()
-            )
-            .exceptionHandling(ex -> ex.accessDeniedHandler(accessDeniedHandler))
-            .headers(h -> h.frameOptions(fo -> fo.sameOrigin()))
-            .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**"));
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/css/**", "/h2-console/**").permitAll()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")   // admin only
+                        .requestMatchers("/change-password").authenticated()
+                        // /register is NO LONGER permitted
+                        .anyRequest().authenticated()
+                )
+                .formLogin(form -> form
+                        .loginPage("/login")
+                        .successHandler(loginSuccessHandler)    // custom handler checks the flag
+                        .permitAll()
+                )
+                .rememberMe(rm -> rm
+                        .key("taskmanager-rme-key-CHANGE-THIS-to-something-random")
+                        .userDetailsService(userService)
+                        .tokenValiditySeconds(86400)        // 24 hours
+                        .rememberMeParameter("remember-me")
+                        .useSecureCookie(false)              // see note below re: HTTPS
+                )
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/login?logout")
+                        .deleteCookies("JSESSIONID", "remember-me")
+                        .permitAll()
+                )
+                .exceptionHandling(ex -> ex.accessDeniedHandler(accessDeniedHandler))
+                .headers(h -> h.frameOptions(fo -> fo.sameOrigin()))
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**"));
 
         return http.build();
     }
