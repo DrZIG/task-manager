@@ -315,9 +315,18 @@
     // server round-trip. Matches against each card's data-search attribute,
     // which bundles title + description + GitHub link + note contents,
     // all pre-lowercased server-side.
+    //
+    // The "show done" / "show not active" checkboxes submit a GET form,
+    // which is a full page reload — that would normally wipe out whatever
+    // was typed in the search box. sessionStorage survives that reload
+    // (it only clears when the tab closes), so we save on every keystroke
+    // and restore it once the new page's cards are in the DOM.
+    const TASK_SEARCH_STORAGE_KEY = 'taskManager.taskSearchQuery';
+
     function filterTasks() {
         const query = document.getElementById('taskSearchInput').value.trim().toLowerCase();
         document.getElementById('taskSearchClear').style.display = query ? 'inline-block' : 'none';
+        sessionStorage.setItem(TASK_SEARCH_STORAGE_KEY, query);
 
         const cards = document.querySelectorAll('#task-list .task-card');
         let visibleCount = 0;
@@ -338,8 +347,18 @@
         const input = document.getElementById('taskSearchInput');
         input.value = '';
         input.focus();
+        sessionStorage.removeItem(TASK_SEARCH_STORAGE_KEY);
         filterTasks();
     }
+
+    // Restore the search query (if any) as soon as the page loads.
+    (function restoreTaskSearch() {
+        const saved = sessionStorage.getItem(TASK_SEARCH_STORAGE_KEY);
+        if (saved) {
+            document.getElementById('taskSearchInput').value = saved;
+            filterTasks();
+        }
+    })();
 
     async function loadWorks(taskId) {
         document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active-task'));
