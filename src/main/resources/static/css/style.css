@@ -62,3 +62,19 @@
 .task-muted {
     opacity: 0.65;
 }
+
+/* ─── Form placeholders ──────────────────────────────────────────── */
+/* Make placeholder text clearly distinguishable from real input —
+   explicitly muted/faded so an empty field (e.g. GitHub Issue Link on
+   a new task) never reads as if it already has a value typed in. */
+.form-control::placeholder,
+.form-select::placeholder {
+    color: #adb5bd !important;
+    opacity: 1 !important; /* Firefox lowers default opacity; force full opacity on the light color itself */
+}
+
+/* Some browsers apply a different (darker) color to :-ms-input-placeholder
+   or autofill-adjacent states — cover the common vendor-prefixed variants too. */
+.form-control::-webkit-input-placeholder { color: #adb5bd !important; }
+.form-control::-moz-placeholder { color: #adb5bd !important; opacity: 1 !important; }
+.form-control:-ms-input-placeholder { color: #adb5bd !important; }
