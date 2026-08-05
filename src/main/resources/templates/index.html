@@ -91,7 +91,7 @@
                 <input type="hidden" name="showInactive" value="false">
             </form>
 
-            <div id="task-list">
+            <div id="task-list" class="tasks-scroll">
                 <div th:if="${#lists.isEmpty(tasks)}" class="text-center text-muted py-5">
                     <i class="bi bi-inbox fs-1 d-block mb-2"></i>
                     No tasks yet. Create your first one!
@@ -255,7 +255,7 @@
                     </div>
 
                     <!-- Works table -->
-                    <div id="works-table-wrapper" style="display:none;">
+                    <div id="works-table-wrapper" class="works-scroll" style="display:none;">
                         <div class="table-responsive">
                             <table class="table table-hover table-sm align-middle">
                                 <thead class="table-light">
@@ -461,7 +461,7 @@
                         <td class="text-nowrap small">${formatTime(w.finishTime)}</td>
                         <td class="text-nowrap"><span class="badge bg-primary-subtle text-primary border border-primary-subtle">${w.formattedDuration}</span></td>
                         <td class="text-nowrap"><span class="badge bg-success-subtle text-success border border-success-subtle">${ws.formattedDailyTotal}</span></td>
-                        <td class="small preserve-lines">${escHtml(w.description || '—')}</td>
+                        <td class="small desc-cell">${escHtml(w.description || '—')}</td>
                         <td class="text-nowrap">
                             <a href="${ctx}works/${w.id}/edit" class="btn btn-outline-secondary btn-sm py-0 px-1" title="Edit"><i class="bi bi-pencil"></i></a>
                             ${deleteBtn}

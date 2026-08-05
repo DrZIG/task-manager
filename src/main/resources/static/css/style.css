@@ -64,17 +64,50 @@
 }
 
 /* ─── Form placeholders ──────────────────────────────────────────── */
-/* Make placeholder text clearly distinguishable from real input —
-   explicitly muted/faded so an empty field (e.g. GitHub Issue Link on
-   a new task) never reads as if it already has a value typed in. */
 .form-control::placeholder,
 .form-select::placeholder {
     color: #adb5bd !important;
-    opacity: 1 !important; /* Firefox lowers default opacity; force full opacity on the light color itself */
+    opacity: 1 !important;
 }
 
-/* Some browsers apply a different (darker) color to :-ms-input-placeholder
-   or autofill-adjacent states — cover the common vendor-prefixed variants too. */
 .form-control::-webkit-input-placeholder { color: #adb5bd !important; }
 .form-control::-moz-placeholder { color: #adb5bd !important; opacity: 1 !important; }
 .form-control:-ms-input-placeholder { color: #adb5bd !important; }
+
+/* ─── Independent scrolling columns ──────────────────────────────── */
+/* The task list scrolls on its own, under the fixed search/filter bar. */
+.tasks-scroll {
+    max-height: calc(100vh - 230px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 4px; /* keeps card content from sliding under the scrollbar */
+}
+
+/* The works table scrolls on its own, under the fixed works header/meta. */
+.works-scroll {
+    max-height: calc(100vh - 260px);
+    overflow-y: auto;
+    overflow-x: auto; /* table can still scroll horizontally on narrow screens */
+    padding-right: 4px;
+}
+
+/* On small screens, stacked columns with independent scroll feels cramped —
+   fall back to normal page scrolling there. */
+@media (max-width: 767.98px) {
+    .tasks-scroll,
+    .works-scroll {
+        max-height: none;
+        overflow: visible;
+    }
+}
+
+/* ─── Description cell in works tables ───────────────────────────── */
+/* Caps a multi-line description to ~2 lines and scrolls internally,
+   instead of stretching the whole table row to fit it. */
+.desc-cell {
+    max-width: 250px;
+    max-height: 3.2em;   /* ~2 lines at line-height 1.6 */
+    overflow-y: auto;
+    white-space: pre-line;
+    line-height: 1.6;
+}
