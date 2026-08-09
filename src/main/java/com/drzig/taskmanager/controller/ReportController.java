@@ -62,6 +62,7 @@ public class ReportController {
         Report report = reportService.findByIdForUser(id, currentUser.getId(), currentUser.isAdmin());
         model.addAttribute("report", report);
         model.addAttribute("groups", reportService.generateGroups(report, currentUser.getId(), currentUser.isAdmin()));
+        model.addAttribute("excludedTasks", reportService.getExcludedTasks(report));
         model.addAttribute("effectiveEndDate", report.getEndDate() != null ? report.getEndDate() : LocalDate.now());
         model.addAttribute("isAdmin", currentUser.isAdmin());
         return "report-view";
@@ -104,5 +105,29 @@ public class ReportController {
         reportService.delete(id, currentUser.getId(), currentUser.isAdmin());
         redirectAttributes.addFlashAttribute("success", "Report deleted.");
         return "redirect:/reports";
+    }
+
+    // ─── Per-report task exclusion ─────────────────────────────────────────
+
+    @PostMapping("/{id}/tasks/{taskId}/exclude")
+    public String excludeTask(
+            @PathVariable Long id,
+            @PathVariable Long taskId,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            RedirectAttributes redirectAttributes) {
+        reportService.excludeTask(id, taskId, currentUser.getId(), currentUser.isAdmin());
+        redirectAttributes.addFlashAttribute("success", "Task removed from this report.");
+        return "redirect:/reports/" + id;
+    }
+
+    @PostMapping("/{id}/tasks/{taskId}/restore")
+    public String restoreTask(
+            @PathVariable Long id,
+            @PathVariable Long taskId,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            RedirectAttributes redirectAttributes) {
+        reportService.restoreTask(id, taskId, currentUser.getId(), currentUser.isAdmin());
+        redirectAttributes.addFlashAttribute("success", "Task restored to this report.");
+        return "redirect:/reports/" + id;
     }
 }

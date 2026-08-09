@@ -7,6 +7,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "reports")
@@ -29,6 +31,16 @@ public class Report {
 
     @Column(name = "include_all_users", nullable = false)
     private boolean includeAllUsers = false;
+
+    /**
+     * Tasks manually removed from this specific report (e.g. noise/irrelevant for this
+     * period's self-review). Scoped to this report only — the task still appears normally
+     * in any other report, and reappears here automatically if unexcluded.
+     */
+    @ElementCollection
+    @CollectionTable(name = "report_excluded_tasks", joinColumns = @JoinColumn(name = "report_id"))
+    @Column(name = "task_id")
+    private Set<Long> excludedTaskIds = new HashSet<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_user_id", nullable = false)
@@ -56,6 +68,9 @@ public class Report {
 
     public boolean isIncludeAllUsers() { return includeAllUsers; }
     public void setIncludeAllUsers(boolean includeAllUsers) { this.includeAllUsers = includeAllUsers; }
+
+    public Set<Long> getExcludedTaskIds() { return excludedTaskIds; }
+    public void setExcludedTaskIds(Set<Long> excludedTaskIds) { this.excludedTaskIds = excludedTaskIds; }
 
     public User getOwner() { return owner; }
     public void setOwner(User owner) { this.owner = owner; }

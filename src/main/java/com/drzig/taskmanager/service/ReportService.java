@@ -5,6 +5,7 @@ import com.drzig.taskmanager.model.Report;
 import com.drzig.taskmanager.model.Task;
 import com.drzig.taskmanager.model.Work;
 import com.drzig.taskmanager.repository.ReportRepository;
+import com.drzig.taskmanager.repository.TaskRepository;
 import com.drzig.taskmanager.repository.UserRepository;
 import com.drzig.taskmanager.repository.WorkRepository;
 import org.springframework.security.access.AccessDeniedException;
@@ -22,11 +23,14 @@ public class ReportService {
     private final ReportRepository reportRepository;
     private final WorkRepository workRepository;
     private final UserRepository userRepository;
+    private final TaskRepository taskRepository;
 
-    public ReportService(ReportRepository reportRepository, WorkRepository workRepository, UserRepository userRepository) {
+    public ReportService(ReportRepository reportRepository, WorkRepository workRepository,
+                         UserRepository userRepository, TaskRepository taskRepository) {
         this.reportRepository = reportRepository;
         this.workRepository = workRepository;
         this.userRepository = userRepository;
+        this.taskRepository = taskRepository;
     }
 
     public List<Report> findForUser(Long currentUserId, boolean isAdmin) {
@@ -78,6 +82,30 @@ public class ReportService {
         reportRepository.delete(report);
     }
 
+    /** Removes a task from this report's display only — the task itself, and its works, are untouched. */
+    @Transactional
+    public void excludeTask(Long reportId, Long taskId, Long currentUserId, boolean isAdmin) {
+        Report report = findByIdForUser(reportId, currentUserId, isAdmin);
+        report.getExcludedTaskIds().add(taskId);
+        reportRepository.save(report);
+    }
+
+    /** Brings a previously-excluded task back into this report's display. */
+    @Transactional
+    public void restoreTask(Long reportId, Long taskId, Long currentUserId, boolean isAdmin) {
+        Report report = findByIdForUser(reportId, currentUserId, isAdmin);
+        report.getExcludedTaskIds().remove(taskId);
+        reportRepository.save(report);
+    }
+
+    /** Tasks currently hidden from this report, for rendering a "restore" list. */
+    public List<Task> getExcludedTasks(Report report) {
+        if (report.getExcludedTaskIds().isEmpty()) {
+            return List.of();
+        }
+        return taskRepository.findAllById(report.getExcludedTaskIds());
+    }
+
     private void validateDates(LocalDate startDate, LocalDate endDate) {
         if (startDate == null) {
             throw new IllegalArgumentException("Start date is required.");
@@ -98,7 +126,8 @@ public class ReportService {
     /**
      * Builds the grouped, sorted report content. Not persisted — recomputed
      * live from current work data every time the report is viewed, so it
-     * always reflects the latest entries for the saved period.
+     * always reflects the latest entries for the saved period. Tasks in
+     * report.getExcludedTaskIds() are skipped.
      */
     public List<TaskReportGroupDto> generateGroups(Report report, Long currentUserId, boolean isAdmin) {
         LocalDate start = report.getStartDate();
@@ -110,6 +139,7 @@ public class ReportService {
                 : workRepository.findByDateRangeAndUser(start, end, currentUserId);
 
         Map<Long, List<Work>> byTask = works.stream()
+                .filter(w -> !report.getExcludedTaskIds().contains(w.getTask().getId()))
                 .collect(Collectors.groupingBy(w -> w.getTask().getId(), LinkedHashMap::new, Collectors.toList()));
 
         List<TaskReportGroupDto> groups = new ArrayList<>();

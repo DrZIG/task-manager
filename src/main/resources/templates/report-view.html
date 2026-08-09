@@ -25,6 +25,13 @@
             padding-bottom: 0.35rem;
             margin-bottom: 0.6rem;
         }
+        .remove-task-btn {
+            opacity: 0.5;
+            transition: opacity 0.15s ease;
+        }
+        .task-group:hover .remove-task-btn {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -104,8 +111,17 @@
                         <i class="bi bi-list-check me-1 text-primary"></i>
                         <span th:text="${g.task.title}">Task title</span>
                     </h5>
-                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle"
-                          th:text="${g.formattedTotal}">2h 30m</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle"
+                              th:text="${g.formattedTotal}">2h 30m</span>
+                        <form th:action="@{/reports/{id}/tasks/{taskId}/exclude(id=${report.id}, taskId=${g.task.id})}"
+                              method="post" class="no-print m-0"
+                              onsubmit="return confirm('Remove &quot;' + /*[[${g.task.title}]]*/ '' + '&quot; from this report? It can be added back anytime.')">
+                            <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-1 remove-task-btn" title="Remove task from this report">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </form>
+                    </div>
                 </div>
 
                 <ul th:if="${not #lists.isEmpty(g.describedWorks)}" class="list-unstyled mb-0">
@@ -125,6 +141,29 @@
                 <p th:if="${#lists.isEmpty(g.describedWorks)}" class="text-muted small fst-italic mb-0">
                     No detailed entries logged for this task in this period.
                 </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Excluded tasks — collapsed by default, restore-only, never printed -->
+    <div th:if="${not #lists.isEmpty(excludedTasks)}" class="mt-3 no-print">
+        <button class="btn btn-outline-secondary btn-sm" type="button"
+                data-bs-toggle="collapse" data-bs-target="#excludedTasksPanel">
+            <i class="bi bi-eye-slash me-1"></i>
+            <span th:text="${#lists.size(excludedTasks)}">0</span> task(s) removed from this report
+        </button>
+        <div id="excludedTasksPanel" class="collapse mt-2">
+            <div class="card border-0 bg-light">
+                <div class="card-body py-2 px-3">
+                    <div th:each="t : ${excludedTasks}" class="d-flex align-items-center justify-content-between py-1">
+                        <span class="small text-muted" th:text="${t.title}">Task title</span>
+                        <form th:action="@{/reports/{id}/tasks/{taskId}/restore(id=${report.id}, taskId=${t.id})}" method="post" class="m-0">
+                            <button type="submit" class="btn btn-outline-primary btn-sm py-0 px-2">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i> Restore
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
