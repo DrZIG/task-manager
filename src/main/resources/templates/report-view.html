@@ -110,6 +110,11 @@
                     <h5 class="mb-0 fw-bold">
                         <i class="bi bi-list-check me-1 text-primary"></i>
                         <span th:text="${g.task.title}">Task title</span>
+                        <a th:if="${g.task.githubIssueLink}" th:href="${g.task.githubIssueLink}"
+                           target="_blank" class="ms-1 small text-decoration-none no-print"
+                           title="Open GitHub issue" onclick="event.stopPropagation()">
+                            <i class="bi bi-github"></i>
+                        </a>
                     </h5>
                     <div class="d-flex align-items-center gap-2">
                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle"
