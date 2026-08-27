@@ -4,6 +4,7 @@ import com.drzig.taskmanager.config.CustomUserDetails;
 import com.drzig.taskmanager.model.Report;
 import com.drzig.taskmanager.service.ReportService;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -118,6 +119,18 @@ public class ReportController {
         reportService.excludeTask(id, taskId, currentUser.getId(), currentUser.isAdmin());
         redirectAttributes.addFlashAttribute("success", "Task removed from this report.");
         return "redirect:/reports/" + id;
+    }
+
+    // ─── Fast async exclude (no redirect/regen — used by report-view.html's fetch()) ──
+
+    @PostMapping("/{id}/tasks/{taskId}/exclude-async")
+    @ResponseBody
+    public ResponseEntity<Void> excludeTaskAsync(
+            @PathVariable Long id,
+            @PathVariable Long taskId,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        reportService.excludeTask(id, taskId, currentUser.getId(), currentUser.isAdmin());
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{id}/tasks/{taskId}/restore")
