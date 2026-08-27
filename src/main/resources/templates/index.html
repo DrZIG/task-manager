@@ -291,6 +291,10 @@
     let activeTaskId = null;
     const ctx = /*[[@{/}]]*/ '/';
     const isAdmin = document.getElementById('user-is-admin').dataset.admin === 'true';
+    // Current filter-checkbox state, so AJAX-built links (Log Work, Edit, Delete)
+    // carry it forward instead of silently resetting it on the next page load.
+    const showDone = /*[[${showDone}]]*/ false;
+    const showInactive = /*[[${showInactive}]]*/ false;
 
     // ─── Session-expiry detection ──────────────────────────────────────────
     // Spring Security responds to an expired-session request for a protected
@@ -409,7 +413,7 @@
 
                 document.getElementById('works-spinner').style.display = 'none';
                 document.getElementById('works-task-title').textContent = data.task.title;
-                document.getElementById('btn-log-work').href = ctx + 'works/new?taskId=' + taskId;
+                document.getElementById('btn-log-work').href = ctx + 'works/new?taskId=' + taskId + '&showDone=' + showDone + '&showInactive=' + showInactive;
 
                 const githubLink = document.getElementById('works-task-github');
                 if (data.task.githubIssueLink) {
@@ -449,12 +453,14 @@
                     const w = ws.work;
                     const tr = document.createElement('tr');
                     tr.style.cursor = 'pointer';
-                    tr.ondblclick = () => { window.location.href = `${ctx}works/${w.id}/edit?taskId=${taskId}`; };
+                    tr.ondblclick = () => { window.location.href = `${ctx}works/${w.id}/edit?showDone=${showDone}&showInactive=${showInactive}`; };
 
                     const deleteBtn = isAdmin ? `
                         <form action="${ctx}works/${w.id}/delete" method="post" style="display:inline"
                               onsubmit="return confirm('Delete this work entry?')">
                             <input type="hidden" name="_csrf" value="${getCsrfToken()}">
+                            <input type="hidden" name="showDone" value="${showDone}">
+                            <input type="hidden" name="showInactive" value="${showInactive}">
                             <button class="btn btn-outline-danger btn-sm py-0 px-1" title="Delete"><i class="bi bi-trash"></i></button>
                         </form>` : '';
 
@@ -466,7 +472,7 @@
                         <td class="text-nowrap"><span class="badge bg-success-subtle text-success border border-success-subtle">${ws.formattedDailyTotal}</span></td>
                         <td class="small desc-cell">${escHtml(w.description || '—')}</td>
                         <td class="text-nowrap">
-                            <a href="${ctx}works/${w.id}/edit" class="btn btn-outline-secondary btn-sm py-0 px-1" title="Edit"><i class="bi bi-pencil"></i></a>
+                            <a href="${ctx}works/${w.id}/edit?showDone=${showDone}&showInactive=${showInactive}" class="btn btn-outline-secondary btn-sm py-0 px-1" title="Edit"><i class="bi bi-pencil"></i></a>
                             ${deleteBtn}
                         </td>
                     `;

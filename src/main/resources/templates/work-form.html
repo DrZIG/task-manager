@@ -107,6 +107,10 @@
                 <!-- Hidden field so POST handlers also know where to return -->
                 <input type="hidden" name="returnTaskId" th:value="${returnTaskId}">
 
+                <!-- Preserve the main page's filter checkboxes across this form's submit -->
+                <input type="hidden" name="showDone" th:value="${showDone}">
+                <input type="hidden" name="showInactive" th:value="${showInactive}">
+
                 <!-- Return-to hint -->
                 <input type="hidden" name="returnTo" th:value="${param.from == 'works'} ? 'works' : ''">
 
@@ -120,10 +124,10 @@
                        th:href="@{/works}"
                        class="btn btn-outline-secondary">Cancel</a>
                     <a th:if="${param.from != 'works' and returnTaskId != null}"
-                       th:href="@{/(taskId=${returnTaskId})}"
+                       th:href="@{/(taskId=${returnTaskId}, showDone=${showDone}, showInactive=${showInactive})}"
                        class="btn btn-outline-secondary">Cancel</a>
                     <a th:if="${param.from != 'works' and returnTaskId == null}"
-                       th:href="@{/}"
+                       th:href="@{/(showDone=${showDone}, showInactive=${showInactive})}"
                        class="btn btn-outline-secondary">Cancel</a>
                 </div>
             </form>

@@ -51,6 +51,8 @@ public class WorkController {
     @GetMapping("/works/new")
     public String newWorkForm(
             @RequestParam(required = false) Long taskId,
+            @RequestParam(required = false, defaultValue = "false") boolean showDone,
+            @RequestParam(required = false, defaultValue = "false") boolean showInactive,
             Model model) {
         Work work = new Work();
         model.addAttribute("work", work);
@@ -58,6 +60,8 @@ public class WorkController {
         model.addAttribute("selectedTaskId", taskId);
         // Let's Cancel (and the hidden returnTaskId field) know which task to return focus to.
         model.addAttribute("returnTaskId", taskId);
+        model.addAttribute("showDone", showDone);
+        model.addAttribute("showInactive", showInactive);
         model.addAttribute("pageTitle", "Log Work");
         return "work-form";
     }
@@ -67,12 +71,14 @@ public class WorkController {
             @ModelAttribute Work work,
             @RequestParam Long taskId,
             @RequestParam(required = false) String returnTo,
+            @RequestParam(required = false, defaultValue = "false") boolean showDone,
+            @RequestParam(required = false, defaultValue = "false") boolean showInactive,
             @AuthenticationPrincipal CustomUserDetails currentUser,
             RedirectAttributes redirectAttributes) {
         workService.createWork(work, taskId, currentUser.getId());
         redirectAttributes.addFlashAttribute("success", "Work logged successfully.");
         if ("works".equals(returnTo)) return "redirect:/works";
-        return "redirect:/?taskId=" + taskId;
+        return "redirect:/?taskId=" + taskId + "&showDone=" + showDone + "&showInactive=" + showInactive;
     }
 
     // ─── Edit work ────────────────────────────────────────────────────────────
@@ -80,6 +86,8 @@ public class WorkController {
     @GetMapping("/works/{id}/edit")
     public String editWorkForm(
             @PathVariable Long id,
+            @RequestParam(required = false, defaultValue = "false") boolean showDone,
+            @RequestParam(required = false, defaultValue = "false") boolean showInactive,
             @AuthenticationPrincipal CustomUserDetails currentUser,
             Model model) {
         Work work = workService.findByIdForUser(id, currentUser.getId(), currentUser.isAdmin());
@@ -88,6 +96,8 @@ public class WorkController {
         model.addAttribute("selectedTaskId", work.getTask().getId());
         // Same as above — needed so Cancel returns to the originating task.
         model.addAttribute("returnTaskId", work.getTask().getId());
+        model.addAttribute("showDone", showDone);
+        model.addAttribute("showInactive", showInactive);
         model.addAttribute("pageTitle", "Edit Work");
         return "work-form";
     }
@@ -98,12 +108,14 @@ public class WorkController {
             @ModelAttribute Work work,
             @RequestParam Long taskId,
             @RequestParam(required = false) String returnTo,
+            @RequestParam(required = false, defaultValue = "false") boolean showDone,
+            @RequestParam(required = false, defaultValue = "false") boolean showInactive,
             @AuthenticationPrincipal CustomUserDetails currentUser,
             RedirectAttributes redirectAttributes) {
         workService.updateWork(id, work, taskId, currentUser.getId(), currentUser.isAdmin());
         redirectAttributes.addFlashAttribute("success", "Work updated.");
         if ("works".equals(returnTo)) return "redirect:/works";
-        return "redirect:/?taskId=" + taskId;
+        return "redirect:/?taskId=" + taskId + "&showDone=" + showDone + "&showInactive=" + showInactive;
     }
 
     // ─── Delete work ──────────────────────────────────────────────────────────
@@ -112,6 +124,8 @@ public class WorkController {
     public String deleteWork(
             @PathVariable Long id,
             @RequestParam(required = false) String returnTo,
+            @RequestParam(required = false, defaultValue = "false") boolean showDone,
+            @RequestParam(required = false, defaultValue = "false") boolean showInactive,
             @AuthenticationPrincipal CustomUserDetails currentUser,
             RedirectAttributes redirectAttributes) {
         Work work = workService.findById(id);
@@ -119,6 +133,6 @@ public class WorkController {
         workService.delete(id, currentUser.getId(), currentUser.isAdmin());
         redirectAttributes.addFlashAttribute("success", "Work deleted.");
         if ("works".equals(returnTo)) return "redirect:/works";
-        return "redirect:/?taskId=" + taskId;
+        return "redirect:/?taskId=" + taskId + "&showDone=" + showDone + "&showInactive=" + showInactive;
     }
 }
