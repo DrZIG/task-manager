@@ -172,6 +172,7 @@
 
     // Caret sits at one of 6 positions in "HH:MM" (0..5). Map it to the digit
     // that should be overwritten next — the colon (position 2/3) is transparent.
+    // Used for forward typing and for Delete (forward-delete direction).
     function digitIndexForCaret(pos) {
         if (pos <= 1) return pos;
         if (pos <= 3) return 2;
@@ -180,6 +181,18 @@
 
     const CARET_BEFORE = [0, 1, 3, 4];   // caret position immediately before digit i
     const CARET_AFTER = [1, 3, 4, 0];    // where the caret lands after typing digit i (wraps after mm)
+
+    // Reverse mapping for Backspace: caret position -> the digit slot that sits
+    // immediately BEFORE the caret, treating the colon as transparent.
+    //   position: 0    1    2    3    4    5
+    //             |    H1   H2   :    M1   M2
+    // Backspace at position 3 (right after the colon, e.g. after typing "19:")
+    // must hit H2 (idx 1), not fall through to M1 (idx 2) — that was the bug:
+    // reusing digitIndexForCaret(pos - 1) collapsed positions 2 and 3 onto the
+    // same forward-typing target (idx 2), so backspacing right after the colon
+    // silently zeroed a minute digit instead of the hour digit the user was
+    // looking at.
+    const BACKSPACE_TARGET = [null, 0, 1, 1, 2, 3];
 
     // Rejects keystrokes that could never be part of a valid 24h time,
     // given what's already in the other digits.
@@ -232,9 +245,9 @@
 
             if (e.key === 'Backspace') {
                 e.preventDefault();
-                const pos = Math.max(0, this.selectionStart - 1);
+                const idx = BACKSPACE_TARGET[this.selectionStart];
+                if (idx === null) return; // caret already at the very start — nothing to delete
                 const digits = timeDigits(this.value);
-                const idx = digitIndexForCaret(pos);
                 digits[idx] = '0';
                 this.value = digits[0] + digits[1] + ':' + digits[2] + digits[3];
                 this.setSelectionRange(CARET_BEFORE[idx], CARET_BEFORE[idx]);

@@ -262,15 +262,15 @@
                         <div class="table-responsive">
                             <table class="table table-hover table-sm align-middle">
                                 <thead class="table-light">
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Start</th>
-                                        <th>Finish</th>
-                                        <th>Duration</th>
-                                        <th>Daily Total</th>
-                                        <th>Description</th>
-                                        <th></th>
-                                    </tr>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Start</th>
+                                    <th>Finish</th>
+                                    <th>Duration</th>
+                                    <th>Daily Total</th>
+                                    <th>Description</th>
+                                    <th></th>
+                                </tr>
                                 </thead>
                                 <tbody id="works-tbody"></tbody>
                             </table>
@@ -411,51 +411,51 @@
             return;
         }
 
-                document.getElementById('works-spinner').style.display = 'none';
-                document.getElementById('works-task-title').textContent = data.task.title;
-                document.getElementById('btn-log-work').href = ctx + 'works/new?taskId=' + taskId + '&showDone=' + showDone + '&showInactive=' + showInactive;
+        document.getElementById('works-spinner').style.display = 'none';
+        document.getElementById('works-task-title').textContent = data.task.title;
+        document.getElementById('btn-log-work').href = ctx + 'works/new?taskId=' + taskId + '&showDone=' + showDone + '&showInactive=' + showInactive;
 
-                const githubLink = document.getElementById('works-task-github');
-                if (data.task.githubIssueLink) {
-                    githubLink.href = data.task.githubIssueLink;
-                    githubLink.style.display = 'inline';
-                } else {
-                    githubLink.style.display = 'none';
-                }
+        const githubLink = document.getElementById('works-task-github');
+        if (data.task.githubIssueLink) {
+            githubLink.href = data.task.githubIssueLink;
+            githubLink.style.display = 'inline';
+        } else {
+            githubLink.style.display = 'none';
+        }
 
-                // Task meta
-                if (data.task.description || (data.task.notes && data.task.notes.length > 0)) {
-                    document.getElementById('task-meta').style.display = 'block';
-                    document.getElementById('task-description').textContent = data.task.description || '';
-                    const notesList = document.getElementById('task-notes');
-                    notesList.innerHTML = '';
-                    if (data.task.notes && data.task.notes.length > 0) {
-                        document.getElementById('task-notes-wrapper').style.display = 'block';
-                        data.task.notes.forEach(n => {
-                            const li = document.createElement('li');
-                            li.textContent = n.content;
-                            notesList.appendChild(li);
-                        });
-                    } else {
-                        document.getElementById('task-notes-wrapper').style.display = 'none';
-                    }
-                }
+        // Task meta
+        if (data.task.description || (data.task.notes && data.task.notes.length > 0)) {
+            document.getElementById('task-meta').style.display = 'block';
+            document.getElementById('task-description').textContent = data.task.description || '';
+            const notesList = document.getElementById('task-notes');
+            notesList.innerHTML = '';
+            if (data.task.notes && data.task.notes.length > 0) {
+                document.getElementById('task-notes-wrapper').style.display = 'block';
+                data.task.notes.forEach(n => {
+                    const li = document.createElement('li');
+                    li.textContent = n.content;
+                    notesList.appendChild(li);
+                });
+            } else {
+                document.getElementById('task-notes-wrapper').style.display = 'none';
+            }
+        }
 
-                if (!data.works || data.works.length === 0) {
-                    document.getElementById('works-empty').style.display = 'block';
-                    return;
-                }
+        if (!data.works || data.works.length === 0) {
+            document.getElementById('works-empty').style.display = 'block';
+            return;
+        }
 
-                document.getElementById('works-table-wrapper').style.display = 'block';
-                const tbody = document.getElementById('works-tbody');
-                tbody.innerHTML = '';
-                data.works.forEach(ws => {
-                    const w = ws.work;
-                    const tr = document.createElement('tr');
-                    tr.style.cursor = 'pointer';
-                    tr.ondblclick = () => { window.location.href = `${ctx}works/${w.id}/edit?showDone=${showDone}&showInactive=${showInactive}`; };
+        document.getElementById('works-table-wrapper').style.display = 'block';
+        const tbody = document.getElementById('works-tbody');
+        tbody.innerHTML = '';
+        data.works.forEach(ws => {
+            const w = ws.work;
+            const tr = document.createElement('tr');
+            tr.style.cursor = 'pointer';
+            tr.ondblclick = () => { window.location.href = `${ctx}works/${w.id}/edit?showDone=${showDone}&showInactive=${showInactive}`; };
 
-                    const deleteBtn = isAdmin ? `
+            const deleteBtn = isAdmin ? `
                         <form action="${ctx}works/${w.id}/delete" method="post" style="display:inline"
                               onsubmit="return confirm('Delete this work entry?')">
                             <input type="hidden" name="_csrf" value="${getCsrfToken()}">
@@ -464,7 +464,7 @@
                             <button class="btn btn-outline-danger btn-sm py-0 px-1" title="Delete"><i class="bi bi-trash"></i></button>
                         </form>` : '';
 
-                    tr.innerHTML = `
+            tr.innerHTML = `
                         <td class="text-nowrap small">${formatDate(w.workDate)}</td>
                         <td class="text-nowrap small">${formatTime(w.startTime)}</td>
                         <td class="text-nowrap small">${formatTime(w.finishTime)}</td>
@@ -476,8 +476,8 @@
                             ${deleteBtn}
                         </td>
                     `;
-                    tbody.appendChild(tr);
-                });
+            tbody.appendChild(tr);
+        });
     }
 
     // Jackson serializes LocalDate as "2026-05-21" — reformat to "May 21, 2026" for display
@@ -529,9 +529,16 @@
 
     setInterval(checkSession, 5 * 60 * 1000); // every 5 minutes while the tab is open
 
+    // Only auto-select a task from the URL's ?taskId= if that task's card is
+    // actually present in the current (filtered) list. Without this check,
+    // changing a task's status (e.g. "Mark Not Active" while "Show not
+    // active" is off) redirects back here with the same taskId, the task
+    // correctly disappears from the left-hand list, but this code would
+    // still blindly call loadWorks() for it — leaving its works panel
+    // visible on the right with no corresponding selected task on the left.
     const params = new URLSearchParams(window.location.search);
     const preselect = params.get('taskId');
-    if (preselect) {
+    if (preselect && document.getElementById('task-card-' + preselect)) {
         loadWorks(parseInt(preselect));
     }
 </script>
