@@ -111,3 +111,14 @@
     white-space: pre-line;
     line-height: 1.6;
 }
+
+/* ─── Task cell in the All Works table ───────────────────────────── */
+/* Fixed narrow column; long titles wrap onto the next line instead of
+   stretching the column. overflow-wrap:anywhere also breaks very long
+   unbroken strings (e.g. URLs or ticket IDs). */
+.task-cell {
+    width: 200px;
+    max-width: 200px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
