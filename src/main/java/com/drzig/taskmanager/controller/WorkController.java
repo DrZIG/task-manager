@@ -16,6 +16,9 @@ import java.time.LocalDate;
 @Controller
 public class WorkController {
 
+    private static final LocalDate MIN_DATE = LocalDate.of(1900, 1, 1);
+    private static final LocalDate MAX_DATE = LocalDate.of(9999, 12, 31);
+
     private final WorkService workService;
     private final TaskService taskService;
 
@@ -35,8 +38,18 @@ public class WorkController {
 
         boolean isAdmin = currentUser.isAdmin();
 
-        if (from != null && to != null) {
-            model.addAttribute("works", workService.findByDateRange(from, to, currentUser.getId(), isAdmin));
+        // If the user picked the dates in reverse order, swap them.
+        if (from != null && to != null && from.isAfter(to)) {
+            LocalDate tmp = from;
+            from = to;
+            to = tmp;
+        }
+
+        if (from != null || to != null) {
+            // Open-ended ranges: a missing side is treated as unbounded.
+            LocalDate effectiveFrom = from != null ? from : MIN_DATE;
+            LocalDate effectiveTo = to != null ? to : MAX_DATE;
+            model.addAttribute("works", workService.findByDateRange(effectiveFrom, effectiveTo, currentUser.getId(), isAdmin));
         } else {
             model.addAttribute("works", workService.findAll(currentUser.getId(), isAdmin));
         }

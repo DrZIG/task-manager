@@ -61,19 +61,19 @@
         </a>
     </div>
 
-    <!-- Date Range Filter -->
+    <!-- Date Range Filter (applies automatically when either date changes) -->
     <div class="card mb-3 border-0 bg-light">
         <div class="card-body py-2">
-            <form th:action="@{/works}" method="get" class="row g-2 align-items-end">
+            <form th:action="@{/works}" method="get" class="row g-2 align-items-end" id="filter-form">
                 <div class="col-auto">
                     <label class="form-label fw-semibold mb-1 small">From</label>
                     <input type="date" name="from" class="form-control form-control-sm"
-                           th:value="${from}">
+                           th:value="${from}" onchange="this.form.submit()">
                 </div>
                 <div class="col-auto">
                     <label class="form-label fw-semibold mb-1 small">To</label>
                     <input type="date" name="to" class="form-control form-control-sm"
-                           th:value="${to}">
+                           th:value="${to}" onchange="this.form.submit()">
                 </div>
                 <div class="col-auto">
                     <button type="submit" class="btn btn-primary btn-sm">
@@ -83,8 +83,11 @@
                         <i class="bi bi-x-circle me-1"></i> Clear
                     </a>
                 </div>
-                <div th:if="${from != null}" class="col-auto text-muted small">
-                    Showing results from <strong th:text="${from}"></strong> to <strong th:text="${to}"></strong>
+                <div th:if="${from != null or to != null}" class="col-auto text-muted small">
+                    Showing results from
+                    <strong th:text="${from != null ? from : 'any date'}"></strong>
+                    to
+                    <strong th:text="${to != null ? to : 'any date'}"></strong>
                 </div>
             </form>
         </div>
